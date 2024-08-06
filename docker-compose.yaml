@@ -1,0 +1,64 @@
+version: '3'
+
+services:
+  postgres:
+    container_name: db
+    image: postgres:13.1-alpine
+    restart: on-failure
+    environment:
+      POSTGRES_DB: orchestratordb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5431:5432"
+    volumes:
+      - orchestrator-postgres-data:/var/lib/postgresql/data
+    command: postgres -c listen_addresses='*'
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    volumes:
+      - orchestrator-zookeeper-data:/var/lib/zookeeper/data
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    volumes:
+      - orchestrator-kafka-data:/var/lib/kafka/data
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui
+    ports:
+      - "9080:8080"
+    restart: on-failure
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=dev
+      - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:29092
+    profiles:
+      - tools
+    volumes:
+      - orchestrator-kafka-ui-data:/var/lib/kafka-ui/data
+
+volumes:
+  orchestrator-postgres-data:
+    driver: local
+  orchestrator-zookeeper-data:
+    driver: local
+  orchestrator-kafka-data:
+    driver: local
+  orchestrator-kafka-ui-data:
+    driver: local
