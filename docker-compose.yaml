@@ -2,7 +2,7 @@ version: '3'
 
 services:
   postgres:
-    container_name: db
+    container_name: orchestratordb
     image: postgres:13.1-alpine
     restart: on-failure
     environment:
