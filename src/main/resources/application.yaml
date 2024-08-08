@@ -7,7 +7,7 @@ spring:
     username: postgres
   cloud:
     function:
-      definition:
+      definition: startWorkflowProcess
     config:
       enable: true
     stream:
@@ -31,4 +31,8 @@ spring:
             batch.size: 16384
             buffer.memory: 33554432
             linger.ms: 1
-#      bindings:
+      bindings:
+        startWorkflowProcess-in-0:
+          destination: workflow-start-process
+          content-type: application/json
+          group: workflow-group
