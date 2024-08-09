@@ -6,7 +6,7 @@ import lombok.Builder;
 public record WorkflowStartProcessMessage(
         String processId,
         String businessKey,
-        Object data
+        CreateClaimMessage data
 ) {
 }
 

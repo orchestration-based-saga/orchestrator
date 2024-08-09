@@ -8,5 +8,6 @@ public record Claim(
         Integer itemId,
         Integer merchantInventoryId,
         UUID customerId,
-        UUID recipientI) {
+        UUID recipientId
+) {
 }

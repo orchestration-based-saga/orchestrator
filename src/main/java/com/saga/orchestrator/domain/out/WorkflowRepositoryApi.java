@@ -8,5 +8,5 @@ public interface WorkflowRepositoryApi {
 
     Optional<WorkflowProcess> findByProcessId(String processId);
 
-    void upsert(WorkflowProcess workflowProcess);
+    WorkflowProcess upsert(WorkflowProcess workflowProcess);
 }

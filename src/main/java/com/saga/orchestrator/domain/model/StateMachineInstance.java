@@ -12,7 +12,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Getter
 public class StateMachineInstance {
-    private final UUID id = UUID.randomUUID();
+    private final UUID id;
     private final StateMachine<WorkflowState, WorkflowEvent> stateMachine;
 
     public WorkflowState getCurrentState() {

@@ -23,7 +23,8 @@ public class WorkflowRepository implements WorkflowRepositoryApi {
     }
 
     @Override
-    public void upsert(WorkflowProcess workflowProcess) {
-        processEntityRepository.save(processEntityMapper.toEntity(workflowProcess));
+    public WorkflowProcess upsert(WorkflowProcess workflowProcess) {
+        return processEntityMapper.toDomain(
+                processEntityRepository.save(processEntityMapper.toEntity(workflowProcess)));
     }
 }

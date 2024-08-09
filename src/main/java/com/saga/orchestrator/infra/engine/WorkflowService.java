@@ -39,27 +39,19 @@ public class WorkflowService implements WorkflowServiceApi {
     }
 
     @Override
-    public void startWorkflow(UUID workflowId) {
+    public void triggerEvent(UUID workflowId, WorkflowEvent event, Object data) {
         WorkflowInstance workflowInstance = workflows.get(workflowId);
         if (workflowInstance != null) {
             StateMachine<WorkflowState, WorkflowEvent> stateMachine = workflowInstance.getStateMachine();
-            stateMachine.startReactively().subscribe();
+            stateMachine.sendEvent(wrapEvent(event, workflowInstance.getId(), data)).subscribe();
         }
     }
 
-    @Override
-    public void triggerEvent(UUID workflowId, WorkflowEvent event) {
-        WorkflowInstance workflowInstance = workflows.get(workflowId);
-        if (workflowInstance != null) {
-            StateMachine<WorkflowState, WorkflowEvent> stateMachine = workflowInstance.getStateMachine();
-            stateMachine.sendEvent(wrapEvent(event, workflowInstance.getId())).subscribe();
-        }
-    }
-
-    private Mono<Message<WorkflowEvent>> wrapEvent(WorkflowEvent event, UUID workflowId) {
+    private Mono<Message<WorkflowEvent>> wrapEvent(WorkflowEvent event, UUID workflowId, Object data) {
         return Mono.just(MessageBuilder
                 .withPayload(event)
                 .setHeader("workflowId", workflowId)
+                .setHeader("data", data)
                 .build());
     }
 }
