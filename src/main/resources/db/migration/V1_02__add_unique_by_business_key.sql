@@ -1,0 +1,1 @@
+alter table process add constraint uq_business_key unique (business_key);
