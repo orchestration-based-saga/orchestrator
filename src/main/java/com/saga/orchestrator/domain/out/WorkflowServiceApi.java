@@ -10,4 +10,6 @@ public interface WorkflowServiceApi {
     StateMachineInstance createWorkflow();
 
     void triggerEvent(UUID workflowId, WorkflowEvent event, Object data);
+
+    StateMachineInstance getWorkflow(UUID workflowId);
 }

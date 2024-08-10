@@ -7,6 +7,8 @@ import com.saga.orchestrator.domain.out.WorkflowProducerApi;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.UUID;
+
 @RequiredArgsConstructor
 @Slf4j
 public class ItemServicingActions implements ItemServicingActionApi {
@@ -14,8 +16,7 @@ public class ItemServicingActions implements ItemServicingActionApi {
     private final WorkflowProducerApi workflowProducerApi;
 
     @Override
-    public void createClaim(ItemServicingProcess process) {
-        // produce message to claim
+    public void createClaim(ItemServicingProcess process, UUID workflowId) {
         workflowProducerApi.sendServiceTaskRequest(TopicUtils.CREATE_CLAIM_TOPIC, process);
     }
 }

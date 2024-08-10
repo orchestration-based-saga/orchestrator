@@ -15,10 +15,11 @@ import org.springframework.statemachine.config.builders.StateMachineStateConfigu
 import org.springframework.statemachine.config.builders.StateMachineTransitionConfigurer;
 
 import java.util.EnumSet;
+import java.util.UUID;
 
+import static com.saga.orchestrator.domain.model.enums.WorkflowEvent.CLAIM_CREATED;
 import static com.saga.orchestrator.domain.model.enums.WorkflowEvent.CREATE_CLAIM;
-import static com.saga.orchestrator.domain.model.enums.WorkflowState.ITEM_SERVICING_INITIATED;
-import static com.saga.orchestrator.domain.model.enums.WorkflowState.USER_ACTION_RETURN_TO_WAREHOUSE;
+import static com.saga.orchestrator.domain.model.enums.WorkflowState.*;
 
 @Configuration
 @Slf4j
@@ -41,19 +42,24 @@ public class ItemServicingStateMachineConfig extends EnumStateMachineConfigurerA
         transitions
                 .withExternal()
                 .source(ITEM_SERVICING_INITIATED).target(USER_ACTION_RETURN_TO_WAREHOUSE).event(CREATE_CLAIM)
-                .action(createClaim());
+                .action(createClaim())
+                .and()
+                .withLocal()
+                .source(USER_ACTION_RETURN_TO_WAREHOUSE).target(USER_ACTION_RETURN_TO_WAREHOUSE_CLAIM_CREATED)
+                .event(CLAIM_CREATED);
     }
 
     @Bean
     public Action<WorkflowState, WorkflowEvent> createClaim() {
         return context -> {
             Object data = context.getMessageHeader("data");
+            UUID workflowId = (UUID) context.getMessageHeader("workflowId");
             if (data == null) {
                 log.error("Can't create claim");
                 // todo throw an error
             }
             if (data instanceof ItemServicingProcess) {
-                itemServicingActionApi.createClaim((ItemServicingProcess) data);
+                itemServicingActionApi.createClaim((ItemServicingProcess) data, workflowId);
             }
         };
     }

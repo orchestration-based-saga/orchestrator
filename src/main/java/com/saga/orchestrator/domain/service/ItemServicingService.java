@@ -8,8 +8,12 @@ import com.saga.orchestrator.domain.model.enums.WorkflowEvent;
 import com.saga.orchestrator.domain.out.WorkflowRepositoryApi;
 import com.saga.orchestrator.domain.out.WorkflowServiceApi;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+import java.util.UUID;
 
 @RequiredArgsConstructor
+@Slf4j
 public class ItemServicingService implements ItemServicingApi {
 
     private final WorkflowRepositoryApi workflowRepositoryApi;
@@ -32,6 +36,27 @@ public class ItemServicingService implements ItemServicingApi {
                     workflowProcess.getWorkflow(),
                     WorkflowEvent.CREATE_CLAIM,
                     process);
+            saveState(workflowProcess.getWorkflow());
         }
+    }
+
+    @Override
+    public void claimCreated(UUID workflowId) {
+        workflowServiceApi.triggerEvent(
+                workflowId,
+                WorkflowEvent.CLAIM_CREATED,
+                null);
+        saveState(workflowId);
+    }
+
+    private void saveState(UUID workflowId) {
+        WorkflowProcess workflowProcess = workflowRepositoryApi.findByWorkflowId(workflowId);
+        if (workflowProcess == null) {
+            log.error("State transition happened but workflow not found");
+            // todo throw error
+            return;
+        }
+        StateMachineInstance stateMachine = workflowServiceApi.getWorkflow(workflowProcess.getWorkflow());
+        workflowRepositoryApi.updateState(workflowProcess.getWorkflow(), stateMachine.getCurrentState());
     }
 }

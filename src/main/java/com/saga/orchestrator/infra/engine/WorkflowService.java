@@ -47,6 +47,11 @@ public class WorkflowService implements WorkflowServiceApi {
         }
     }
 
+    @Override
+    public StateMachineInstance getWorkflow(UUID workflowId) {
+        return mapper.toDomain(workflows.get(workflowId));
+    }
+
     private Mono<Message<WorkflowEvent>> wrapEvent(WorkflowEvent event, UUID workflowId, Object data) {
         return Mono.just(MessageBuilder
                 .withPayload(event)
