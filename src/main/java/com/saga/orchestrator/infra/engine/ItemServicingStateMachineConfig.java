@@ -18,8 +18,7 @@ import org.springframework.statemachine.guard.Guard;
 import java.util.EnumSet;
 import java.util.UUID;
 
-import static com.saga.orchestrator.domain.model.enums.WorkflowEvent.CLAIM_CREATED;
-import static com.saga.orchestrator.domain.model.enums.WorkflowEvent.CREATE_CLAIM;
+import static com.saga.orchestrator.domain.model.enums.WorkflowEvent.*;
 import static com.saga.orchestrator.domain.model.enums.WorkflowState.*;
 
 @Configuration
@@ -56,7 +55,11 @@ public class ItemServicingStateMachineConfig extends EnumStateMachineConfigurerA
                     .source(USER_ACTION_RETURN_TO_WAREHOUSE_COMPLETED)
                     .first(SERVICE_ON_SITE, doNotReturnToWarehouse())
                     .then(CREATE_SHIPMENT, returnToWarehouse(), createShipment())
-                    .last(IS_FOR_REFUND);
+                    .last(IS_FOR_REFUND)
+                .and()
+                .withExternal()
+                .source(CREATE_SHIPMENT).target(ASSIGN_COURIER).event(SHIPMENT_CREATED)
+                .action(updateClaim()).action(assignCourier())
         ;
     }
 
@@ -71,6 +74,36 @@ public class ItemServicingStateMachineConfig extends EnumStateMachineConfigurerA
             }
             if (data instanceof ItemServicingProcess) {
                 itemServicingActionApi.createClaim((ItemServicingProcess) data, workflowId);
+            }
+        };
+    }
+
+    @Bean
+    public Action<WorkflowState, WorkflowEvent> updateClaim() {
+        return context -> {
+            Object data = context.getMessageHeader("data");
+            UUID workflowId = (UUID) context.getMessageHeader("workflowId");
+            if (data == null) {
+                log.error("Can't update claim");
+                // todo throw an error
+            }
+            if (data instanceof ItemServicingProcess) {
+                itemServicingActionApi.updateClaim((ItemServicingProcess) data, workflowId);
+            }
+        };
+    }
+
+    @Bean
+    public Action<WorkflowState, WorkflowEvent> assignCourier() {
+        return context -> {
+            Object data = context.getMessageHeader("data");
+            UUID workflowId = (UUID) context.getMessageHeader("workflowId");
+            if (data == null) {
+                log.error("Can't assign courier");
+                // todo throw an error
+            }
+            if (data instanceof ItemServicingProcess) {
+                itemServicingActionApi.assignCourier((ItemServicingProcess) data, workflowId);
             }
         };
     }
@@ -104,6 +137,8 @@ public class ItemServicingStateMachineConfig extends EnumStateMachineConfigurerA
             return false;
         };
     }
+
+
 
     @Bean
     public Guard<WorkflowState, WorkflowEvent> returnToWarehouse() {

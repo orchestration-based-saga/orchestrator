@@ -58,6 +58,21 @@ public class ItemServicingService implements ItemServicingApi {
         }
     }
 
+    @Override
+    public void shipmentCreated(String businessKey, ItemServicingProcess process) {
+        Optional<WorkflowProcess> maybeProcess = workflowRepositoryApi.findByBusinessKey(businessKey);
+        if (maybeProcess.isPresent()) {
+            WorkflowProcess workflowProcess = maybeProcess.get();
+            if (workflowProcess.state.equals(WorkflowState.CREATE_SHIPMENT)) {
+                StateMachineInstance stateMachine = workflowServiceApi.triggerEvent(
+                        workflowProcess.getWorkflow(),
+                        WorkflowEvent.SHIPMENT_CREATED,
+                        process);
+                saveState(workflowProcess, stateMachine.getCurrentState());
+            }
+        }
+    }
+
     private void saveState(WorkflowProcess workflowProcess, WorkflowState state) {
         workflowRepositoryApi.updateState(workflowProcess.getWorkflow(), state);
     }

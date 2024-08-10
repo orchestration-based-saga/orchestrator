@@ -7,4 +7,6 @@ public interface ItemServicingApi {
     void itemServicing(ItemServicingProcess process);
 
     void claimCreated(String businessKey, ItemServicingProcess process);
+
+    void shipmentCreated(String businessKey, ItemServicingProcess process);
 }

@@ -9,7 +9,6 @@ public record ItemServicingProcessResponse(
         Long parentProcessId,
         UUID workflow,
         ClaimResponse claim
-)
-{
+) {
 }
 

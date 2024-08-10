@@ -44,6 +44,15 @@ public class WorkflowConsumer {
         };
     }
 
+    @Bean
+    public Consumer<Message<ItemServicingProcessResponse>> shipmentCreated() {
+        return msg ->
+        {
+            ItemServicingProcessResponse payload = msg.getPayload();
+            itemServicingApi.shipmentCreated(payload.businessKey(), mapper.fromResponse(payload));
+        };
+    }
+
 
     private void processBusinessError(RuntimeException e) {
     }
