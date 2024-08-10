@@ -1,8 +1,6 @@
 package com.saga.orchestrator.application.mapper;
 
-import com.saga.orchestrator.application.api.CreateClaimMessage;
-import com.saga.orchestrator.application.api.ItemServicingProcessMessage;
-import com.saga.orchestrator.application.api.WorkflowStartProcessMessage;
+import com.saga.orchestrator.application.api.*;
 import com.saga.orchestrator.domain.model.Claim;
 import com.saga.orchestrator.domain.model.ItemServicingProcess;
 import org.mapstruct.Mapper;
@@ -19,6 +17,11 @@ public interface ProcessMapper {
     @Mapping(target = "claim", source = "message.data", qualifiedByName = "toClaim")
     ItemServicingProcess toItemServicingProcess(WorkflowStartProcessMessage message);
 
+    Claim fromResponse(ClaimResponse response);
+
+    @Mapping(target = "state", ignore = true)
+    ItemServicingProcess fromResponse(ItemServicingProcessResponse response);
+
     @Named("toClaim")
     default Claim toClaim(Object data) {
         try {
@@ -28,7 +31,8 @@ public interface ProcessMapper {
                         claimMessage.itemId(),
                         claimMessage.merchantInventoryId(),
                         claimMessage.customerId(),
-                        claimMessage.recipientId());
+                        claimMessage.recipientId(),
+                        null);
             }
         } catch (ClassCastException e) {
             return null;

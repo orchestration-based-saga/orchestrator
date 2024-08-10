@@ -8,6 +8,7 @@ public record Claim(
         Integer itemId,
         Integer merchantInventoryId,
         UUID customerId,
-        UUID recipientId
+        UUID recipientId,
+        Boolean shipmentInitiated
 ) {
 }

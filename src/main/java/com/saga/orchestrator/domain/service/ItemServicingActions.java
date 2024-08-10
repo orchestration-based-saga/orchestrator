@@ -19,4 +19,9 @@ public class ItemServicingActions implements ItemServicingActionApi {
     public void createClaim(ItemServicingProcess process, UUID workflowId) {
         workflowProducerApi.sendServiceTaskRequest(TopicUtils.CREATE_CLAIM_TOPIC, process);
     }
+
+    @Override
+    public void createShipment(ItemServicingProcess process, UUID workflowId) {
+        workflowProducerApi.sendServiceTaskRequest(TopicUtils.CREATE_SHIPMENT_TOPIC, process);
+    }
 }

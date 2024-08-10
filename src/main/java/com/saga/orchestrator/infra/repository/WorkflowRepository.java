@@ -7,6 +7,7 @@ import com.saga.orchestrator.infra.mapper.ProcessEntityMapper;
 import com.saga.orchestrator.infra.repository.jpa.ProcessEntityRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -19,8 +20,8 @@ public class WorkflowRepository implements WorkflowRepositoryApi {
     private final ProcessEntityMapper processEntityMapper;
 
     @Override
-    public Optional<WorkflowProcess> findByProcessId(String processId) {
-        return processEntityRepository.findByProcessId(processId)
+    public Optional<WorkflowProcess> findByBusinessKey(String businessKey) {
+        return processEntityRepository.findByBusinessKey(businessKey)
                 .map(processEntityMapper::toDomain);
     }
 
@@ -30,13 +31,10 @@ public class WorkflowRepository implements WorkflowRepositoryApi {
                 processEntityRepository.save(processEntityMapper.toEntity(workflowProcess)));
     }
 
+    @Transactional
     @Override
     public void updateState(UUID workflowId, WorkflowState state) {
         processEntityRepository.updateState(workflowId, state);
     }
 
-    @Override
-    public WorkflowProcess findByWorkflowId(UUID workflowId) {
-        return processEntityMapper.toDomain(processEntityRepository.findByWorkflowId(workflowId));
-    }
 }

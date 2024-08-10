@@ -1,0 +1,1 @@
+alter table process add constraint uq_workflow_id unique (workflow_id);

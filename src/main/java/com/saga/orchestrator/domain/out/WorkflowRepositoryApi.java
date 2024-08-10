@@ -8,11 +8,10 @@ import java.util.UUID;
 
 public interface WorkflowRepositoryApi {
 
-    Optional<WorkflowProcess> findByProcessId(String processId);
+    Optional<WorkflowProcess> findByBusinessKey(String businessKey);
 
     WorkflowProcess upsert(WorkflowProcess workflowProcess);
 
     void updateState(UUID workflowId, WorkflowState state);
 
-    WorkflowProcess findByWorkflowId(UUID workflowId);
 }

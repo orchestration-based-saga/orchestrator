@@ -13,6 +13,7 @@ import org.springframework.statemachine.config.EnableStateMachineFactory;
 import org.springframework.statemachine.config.EnumStateMachineConfigurerAdapter;
 import org.springframework.statemachine.config.builders.StateMachineStateConfigurer;
 import org.springframework.statemachine.config.builders.StateMachineTransitionConfigurer;
+import org.springframework.statemachine.guard.Guard;
 
 import java.util.EnumSet;
 import java.util.UUID;
@@ -34,7 +35,9 @@ public class ItemServicingStateMachineConfig extends EnumStateMachineConfigurerA
     public void configure(StateMachineStateConfigurer<WorkflowState, WorkflowEvent> states) throws Exception {
         states.withStates()
                 .initial(ITEM_SERVICING_INITIATED)
-                .states(EnumSet.allOf(WorkflowState.class));
+                .states(EnumSet.allOf(WorkflowState.class))
+                .junction(USER_ACTION_RETURN_TO_WAREHOUSE_COMPLETED);
+
     }
 
     @Override
@@ -44,9 +47,17 @@ public class ItemServicingStateMachineConfig extends EnumStateMachineConfigurerA
                 .source(ITEM_SERVICING_INITIATED).target(USER_ACTION_RETURN_TO_WAREHOUSE).event(CREATE_CLAIM)
                 .action(createClaim())
                 .and()
-                .withLocal()
-                .source(USER_ACTION_RETURN_TO_WAREHOUSE).target(USER_ACTION_RETURN_TO_WAREHOUSE_CLAIM_CREATED)
-                .event(CLAIM_CREATED);
+                .withExternal()
+                .source(USER_ACTION_RETURN_TO_WAREHOUSE).target(USER_ACTION_RETURN_TO_WAREHOUSE_COMPLETED)
+                .event(CLAIM_CREATED)
+                .and()
+                // user decided that item should/should not be returned to warehouse
+                .withJunction()
+                    .source(USER_ACTION_RETURN_TO_WAREHOUSE_COMPLETED)
+                    .first(SERVICE_ON_SITE, doNotReturnToWarehouse())
+                    .then(CREATE_SHIPMENT, returnToWarehouse(), createShipment())
+                    .last(IS_FOR_REFUND);
+        ;
     }
 
     @Bean
@@ -61,6 +72,51 @@ public class ItemServicingStateMachineConfig extends EnumStateMachineConfigurerA
             if (data instanceof ItemServicingProcess) {
                 itemServicingActionApi.createClaim((ItemServicingProcess) data, workflowId);
             }
+        };
+    }
+
+    @Bean
+    public Action<WorkflowState, WorkflowEvent> createShipment() {
+        return context -> {
+            Object data = context.getMessageHeader("data");
+            UUID workflowId = (UUID) context.getMessageHeader("workflowId");
+            if (data == null) {
+                log.error("Can't create shipment");
+                // todo throw an error
+            }
+            if (data instanceof ItemServicingProcess) {
+                itemServicingActionApi.createShipment((ItemServicingProcess) data, workflowId);
+            }
+        };
+    }
+
+    @Bean
+    public Guard<WorkflowState, WorkflowEvent> doNotReturnToWarehouse() {
+        return context -> {
+            Object data = context.getMessageHeader("data");
+            if (data == null) {
+                log.error("Can't create shipment");
+                // todo throw an error
+            }
+            if (data instanceof ItemServicingProcess) {
+                return !((ItemServicingProcess) data).getClaim().shipmentInitiated();
+            }
+            return false;
+        };
+    }
+
+    @Bean
+    public Guard<WorkflowState, WorkflowEvent> returnToWarehouse() {
+        return context -> {
+            Object data = context.getMessageHeader("data");
+            if (data == null) {
+                log.error("Can't create shipment");
+                // todo throw an error
+            }
+            if (data instanceof ItemServicingProcess) {
+                return ((ItemServicingProcess) data).getClaim().shipmentInitiated();
+            }
+            return false;
         };
     }
 }

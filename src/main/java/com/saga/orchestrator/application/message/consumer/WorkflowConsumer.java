@@ -37,7 +37,11 @@ public class WorkflowConsumer {
 
     @Bean
     public Consumer<Message<ItemServicingProcessResponse>> claimCreated() {
-        return msg -> itemServicingApi.claimCreated(msg.getPayload().workflow());
+        return msg ->
+        {
+            ItemServicingProcessResponse payload = msg.getPayload();
+            itemServicingApi.claimCreated(payload.businessKey(), mapper.fromResponse(payload));
+        };
     }
 
 

@@ -14,6 +14,7 @@ public record ClaimResponse(
         BigDecimal refundAmount,
         ClaimStatus status,
         UUID customerId,
-        UUID recipientId
+        UUID recipientId,
+        Boolean shipmentInitiated
 ) {
 }

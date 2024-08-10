@@ -8,4 +8,5 @@ public interface ItemServicingActionApi {
 
     void createClaim(ItemServicingProcess process, UUID workflowId);
 
+    void createShipment(ItemServicingProcess process, UUID workflowId);
 }
