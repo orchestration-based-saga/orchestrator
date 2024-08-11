@@ -25,13 +25,16 @@ public interface ProcessMapper {
     @Named("toClaim")
     default Claim toClaim(Object data) {
         try {
-            if (data instanceof CreateClaimMessage claimMessage) {
+            if (data instanceof ClaimMessage claimMessage) {
                 return new Claim(
+                        claimMessage.id(),
                         claimMessage.orderId(),
                         claimMessage.itemId(),
                         claimMessage.merchantInventoryId(),
+                        null,
                         claimMessage.customerId(),
                         claimMessage.recipientId(),
+                        null,
                         null);
             }
         } catch (ClassCastException e) {

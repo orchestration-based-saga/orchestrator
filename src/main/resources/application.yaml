@@ -41,6 +41,6 @@ spring:
           content-type: application/json
           group: workflow-group
         shipmentCreated-in-0:
-          destination: workflow-shipment-create-request
+          destination: workflow-shipment-create-response
           content-type: application/json
           group: workflow-group
