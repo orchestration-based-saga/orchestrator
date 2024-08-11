@@ -13,6 +13,7 @@ public record Claim(
         UUID customerId,
         UUID recipientId,
         Boolean shipmentInitiated,
-        ClaimState status
+        ClaimState status,
+        String packageId
 ) {
 }

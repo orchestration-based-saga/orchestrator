@@ -17,6 +17,7 @@ public record ClaimResponse(
         ClaimStatus status,
         UUID customerId,
         UUID recipientId,
-        Boolean shipmentInitiated
+        Boolean shipmentInitiated,
+        String packageId
 ) {
 }

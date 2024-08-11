@@ -35,6 +35,7 @@ public interface ProcessMapper {
                         claimMessage.customerId(),
                         claimMessage.recipientId(),
                         null,
+                        null,
                         null);
             }
         } catch (ClassCastException e) {
