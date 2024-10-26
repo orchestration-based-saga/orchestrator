@@ -2,6 +2,7 @@ package com.saga.orchestrator.infra.engine;
 
 import com.saga.orchestrator.domain.in.ItemServicingActionApi;
 import com.saga.orchestrator.domain.model.ItemServicingProcess;
+import com.saga.orchestrator.domain.model.ShipmentProcess;
 import com.saga.orchestrator.domain.model.enums.WorkflowEvent;
 import com.saga.orchestrator.domain.model.enums.WorkflowState;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +29,8 @@ import static com.saga.orchestrator.domain.model.enums.WorkflowState.*;
 public class ItemServicingStateMachineConfig extends EnumStateMachineConfigurerAdapter<WorkflowState, WorkflowEvent> {
 
     private final ItemServicingActionApi itemServicingActionApi;
+    // 5 MINUTES
+    private long DELIVERY_TIMEOUT_PERIOD = 300000;
 
 
     @Override
@@ -52,16 +55,84 @@ public class ItemServicingStateMachineConfig extends EnumStateMachineConfigurerA
                 .and()
                 // user decided that item should/should not be returned to warehouse
                 .withJunction()
-                    .source(USER_ACTION_RETURN_TO_WAREHOUSE_COMPLETED)
-                    .first(SERVICE_ON_SITE, doNotReturnToWarehouse())
-                    .then(CREATE_SHIPMENT, returnToWarehouse(), createShipment())
-                    .last(IS_FOR_REFUND)
+                .source(USER_ACTION_RETURN_TO_WAREHOUSE_COMPLETED)
+                .first(SERVICE_ON_SITE, doNotReturnToWarehouse())
+                .then(CREATE_SHIPMENT, returnToWarehouse(), createShipment())
+                .last(IS_FOR_REFUND)
                 .and()
                 .withExternal()
                 .source(CREATE_SHIPMENT).target(ASSIGN_COURIER).event(SHIPMENT_CREATED)
-                .action(updateClaim()).action(assignCourier())
+                .action(updateClaim()).action(assignCourierToShipment()).action(addRequestToContext())
+                .and()
+                .withInternal()
+                .source(ASSIGN_COURIER)
+                .and()
+                .withExternal()
+                .source(ASSIGN_COURIER).target(ASSIGN_COURIER_COMPLETED).event(COURIER_ASSIGNED)
+                .action(notifyWarehouseOfIncomingDelivery())
+                .and()
+                .withInternal()
+                .source(ASSIGN_COURIER_COMPLETED)
+                .timer(DELIVERY_TIMEOUT_PERIOD)
+                // if not reassign courier, else update status on courier and shipment
+                .action(checkIfDelivered())
+                .and()
+                .withExternal()
+                .source(ASSIGN_COURIER_COMPLETED).target(NOT_DELIVERED).event(PACKAGE_NOT_DELIVERED)
+                .action(reassignCourier())
+                .and()
+                .withExternal()
+                .source(ASSIGN_COURIER_COMPLETED).target(DELIVERED).event(PACKAGE_DELIVERED)
+//                .action(updateShipment())
+                // when shipment, courier and claim are updated transition to is for refund state
         ;
     }
+
+    // ACTIONS
+
+    @Bean
+    Action<WorkflowState, WorkflowEvent> notifyWarehouseOfIncomingDelivery() {
+        return context -> {
+            Object data = context.getMessageHeader("data");
+            UUID workflowId = (UUID) context.getMessageHeader("workflowId");
+            if (data == null) {
+                log.error("Can't notify warehouse of incoming package");
+                // todo throw an error
+            }
+            if (data instanceof ShipmentProcess process) {
+                context.getExtendedState().getVariables().put("packageId", process.getShipment().packageId());
+                context.getExtendedState().getVariables().put("businessKey", process.getBusinessKey());
+                itemServicingActionApi.notifyWarehouse(process, workflowId);
+            }
+        };
+    }
+
+    @Bean
+    Action<WorkflowState, WorkflowEvent> checkIfDelivered() {
+        return context -> {
+            String packageId = (String) context.getExtendedState().getVariables().get("packageId");
+            String businessKey = (String) context.getExtendedState().getVariables().get("businessKey");
+            UUID workflowId = (UUID) context.getMessageHeader("workflowId");
+            itemServicingActionApi.checkIfPackageIsDelivered(businessKey, packageId, workflowId);
+        };
+    }
+
+    @Bean
+    public Action<WorkflowState, WorkflowEvent> addRequestToContext() {
+        return context -> {
+            Object data = context.getMessageHeader("data");
+            if (data == null) {
+                log.error("Can't save assign courier request");
+                // todo throw an error
+            }
+            if (data instanceof ItemServicingProcess) {
+                context.getExtendedState().getVariables()
+                        .getOrDefault("assignCourierRequest", null);
+                context.getExtendedState().getVariables().put("assignCourierRequest", data);
+            }
+        };
+    }
+
 
     @Bean
     public Action<WorkflowState, WorkflowEvent> createClaim() {
@@ -94,12 +165,28 @@ public class ItemServicingStateMachineConfig extends EnumStateMachineConfigurerA
     }
 
     @Bean
-    public Action<WorkflowState, WorkflowEvent> assignCourier() {
+    public Action<WorkflowState, WorkflowEvent> assignCourierToShipment() {
         return context -> {
             Object data = context.getMessageHeader("data");
             UUID workflowId = (UUID) context.getMessageHeader("workflowId");
             if (data == null) {
                 log.error("Can't assign courier");
+                // todo throw an error
+            }
+            if (data instanceof ItemServicingProcess) {
+                itemServicingActionApi.assignCourier((ItemServicingProcess) data, workflowId);
+            }
+        };
+    }
+
+    @Bean
+    public Action<WorkflowState, WorkflowEvent> reassignCourier() {
+        return context -> {
+            Object data = context.getExtendedState().getVariables()
+                    .get("assignCourierRequest");
+            UUID workflowId = (UUID) context.getMessageHeader("workflowId");
+            if (data == null) {
+                log.error("Can't reassign courier");
                 // todo throw an error
             }
             if (data instanceof ItemServicingProcess) {
@@ -123,6 +210,8 @@ public class ItemServicingStateMachineConfig extends EnumStateMachineConfigurerA
         };
     }
 
+    // GUARDS
+
     @Bean
     public Guard<WorkflowState, WorkflowEvent> doNotReturnToWarehouse() {
         return context -> {
@@ -137,7 +226,6 @@ public class ItemServicingStateMachineConfig extends EnumStateMachineConfigurerA
             return false;
         };
     }
-
 
 
     @Bean

@@ -1,8 +1,6 @@
 package com.saga.orchestrator.application.message.consumer;
 
-import com.saga.orchestrator.application.api.ItemServicingProcessResponse;
-import com.saga.orchestrator.application.api.WorkflowConstants;
-import com.saga.orchestrator.application.api.WorkflowStartProcessMessage;
+import com.saga.orchestrator.application.api.*;
 import com.saga.orchestrator.application.exception.BusinessError;
 import com.saga.orchestrator.application.mapper.ProcessMapper;
 import com.saga.orchestrator.domain.in.ItemServicingApi;
@@ -53,6 +51,22 @@ public class WorkflowConsumer {
         };
     }
 
+    @Bean
+    public Consumer<Message<ItemServicingProcessShipmentResponse>> assignCourier() {
+        return msg ->
+        {
+            ItemServicingProcessShipmentResponse payload = msg.getPayload();
+            itemServicingApi.courierAssigned(payload.businessKey(), mapper.fromResponse(payload));
+        };
+    }
+
+    @Bean
+    public Consumer<Message<CheckDeliveryResponse>> checkDelivery() {
+        return msg -> {
+            CheckDeliveryResponse payload = msg.getPayload();
+            itemServicingApi.isPackageDelivered(payload.getBusinessKey(), mapper.fromResponse(payload));
+        };
+    }
 
     private void processBusinessError(RuntimeException e) {
     }

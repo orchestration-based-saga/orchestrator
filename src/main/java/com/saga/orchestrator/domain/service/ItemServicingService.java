@@ -1,9 +1,7 @@
 package com.saga.orchestrator.domain.service;
 
 import com.saga.orchestrator.domain.in.ItemServicingApi;
-import com.saga.orchestrator.domain.model.ItemServicingProcess;
-import com.saga.orchestrator.domain.model.StateMachineInstance;
-import com.saga.orchestrator.domain.model.WorkflowProcess;
+import com.saga.orchestrator.domain.model.*;
 import com.saga.orchestrator.domain.model.enums.WorkflowEvent;
 import com.saga.orchestrator.domain.model.enums.WorkflowState;
 import com.saga.orchestrator.domain.out.WorkflowRepositoryApi;
@@ -70,6 +68,34 @@ public class ItemServicingService implements ItemServicingApi {
                         process);
                 saveState(workflowProcess, stateMachine.getCurrentState());
             }
+        }
+    }
+
+    @Override
+    public void courierAssigned(String businessKey, ShipmentProcess process) {
+        Optional<WorkflowProcess> maybeProcess = workflowRepositoryApi.findByBusinessKey(businessKey);
+        if (maybeProcess.isPresent()) {
+            WorkflowProcess workflowProcess = maybeProcess.get();
+            StateMachineInstance stateMachine = workflowServiceApi.triggerEvent(
+                    workflowProcess.getWorkflow(),
+                    WorkflowEvent.COURIER_ASSIGNED,
+                    process);
+            saveState(workflowProcess, stateMachine.getCurrentState());
+        }
+    }
+
+    @Override
+    public void isPackageDelivered(String businessKey, CheckDeliveryProcess process) {
+        Optional<WorkflowProcess> maybeProcess = workflowRepositoryApi.findByBusinessKey(businessKey);
+        if (maybeProcess.isPresent()) {
+            WorkflowProcess workflowProcess = maybeProcess.get();
+            WorkflowEvent event = process.getIsDelivered() ?
+                    WorkflowEvent.PACKAGE_DELIVERED : WorkflowEvent.PACKAGE_NOT_DELIVERED;
+            StateMachineInstance stateMachine = workflowServiceApi.triggerEvent(
+                    workflowProcess.getWorkflow(),
+                    event,
+                    process);
+            saveState(workflowProcess, stateMachine.getCurrentState());
         }
     }
 

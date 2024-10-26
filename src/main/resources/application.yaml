@@ -7,7 +7,7 @@ spring:
     username: postgres
   cloud:
     function:
-      definition: startWorkflowProcess;claimCreated;shipmentCreated
+      definition: startWorkflowProcess;claimCreated;shipmentCreated;packageDelivered;courierAssigned;
     config:
       enable: true
     stream:
@@ -42,5 +42,17 @@ spring:
           group: workflow-group
         shipmentCreated-in-0:
           destination: workflow-shipment-create-response
+          content-type: application/json
+          group: workflow-group
+        courierAssigned-in-0:
+          destination: workflow-courier-assign-response
+          content-type: application/json
+          group: workflow-group
+        packageDelivered-in-0:
+          destination: workflow-courier-delivered-response
+          content-type: application/json
+          group: workflow-group
+        checkDelivery-in-0:
+          destination: workflow-shipment-check-delivery-response
           content-type: application/json
           group: workflow-group
