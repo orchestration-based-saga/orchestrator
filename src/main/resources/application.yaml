@@ -1,4 +1,7 @@
 spring:
+  jpa:
+    hibernate:
+      ddl-auto: create
   application:
     name: orchestrator
   datasource:
@@ -56,3 +59,6 @@ spring:
           destination: workflow-shipment-check-delivery-response
           content-type: application/json
           group: workflow-group
+logging:
+  level:
+    org.apache.kafka: ERROR

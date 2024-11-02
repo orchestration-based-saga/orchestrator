@@ -1,7 +1,10 @@
 package com.saga.orchestrator.domain.service;
 
 import com.saga.orchestrator.domain.in.ItemServicingApi;
-import com.saga.orchestrator.domain.model.*;
+import com.saga.orchestrator.domain.model.CheckDeliveryProcess;
+import com.saga.orchestrator.domain.model.ItemServicingProcess;
+import com.saga.orchestrator.domain.model.ShipmentProcess;
+import com.saga.orchestrator.domain.model.WorkflowProcess;
 import com.saga.orchestrator.domain.model.enums.WorkflowEvent;
 import com.saga.orchestrator.domain.model.enums.WorkflowState;
 import com.saga.orchestrator.domain.out.WorkflowRepositoryApi;
@@ -11,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
+import java.util.UUID;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -23,21 +27,24 @@ public class ItemServicingService implements ItemServicingApi {
     @Override
     public void itemServicing(ItemServicingProcess process) {
         if (workflowRepositoryApi.findByBusinessKey(process.getBusinessKey()).isEmpty()) {
-            StateMachineInstance workflow = workflowServiceApi.createWorkflow();
-            WorkflowProcess workflowProcess = WorkflowProcess.builder()
-                    .processId(process.getProcessId())
-                    .businessKey(process.getBusinessKey())
-                    .workflow(workflow.getId())
-                    .state(workflow.getCurrentState())
-                    .build();
-
-            workflowProcess = workflowRepositoryApi.upsert(workflowProcess);
-            process.updateWorkflowProcess(workflowProcess);
-            workflowServiceApi.triggerEvent(
-                    workflowProcess.getWorkflow(),
-                    WorkflowEvent.CREATE_CLAIM,
-                    process);
-            saveState(workflowProcess, workflow.getCurrentState());
+            workflowServiceApi.createWorkflow()
+                    .map(workflow -> WorkflowProcess.builder()
+                            .processId(process.getProcessId())
+                            .businessKey(process.getBusinessKey())
+                            .workflow(workflow.getUuid())
+                            .state(workflow.getState().getId())
+                            .build())
+                    .subscribe(workflowProcess -> {
+                        var workflow = workflowRepositoryApi.upsert(workflowProcess);
+                        process.updateWorkflowProcess(workflow);
+                        final var workflowId = workflow.getWorkflow();
+                        workflowServiceApi.triggerEvent(
+                                        workflow.getWorkflow(),
+                                        WorkflowEvent.CREATE_CLAIM,
+                                        process)
+                                .single()
+                                .subscribe(state -> saveState(workflowId, state));
+                    });
         }
     }
 
@@ -47,11 +54,12 @@ public class ItemServicingService implements ItemServicingApi {
         if (maybeProcess.isPresent()) {
             WorkflowProcess workflowProcess = maybeProcess.get();
             if (workflowProcess.state.equals(WorkflowState.USER_ACTION_RETURN_TO_WAREHOUSE)) {
-                StateMachineInstance stateMachine = workflowServiceApi.triggerEvent(
-                        workflowProcess.getWorkflow(),
-                        WorkflowEvent.CLAIM_CREATED,
-                        process);
-                saveState(workflowProcess, stateMachine.getCurrentState());
+                workflowServiceApi.triggerEvent(
+                                workflowProcess.getWorkflow(),
+                                WorkflowEvent.CLAIM_CREATED,
+                                process)
+                        .single()
+                        .subscribe(state -> saveState(workflowProcess.getWorkflow(), state));
             }
         }
     }
@@ -62,11 +70,12 @@ public class ItemServicingService implements ItemServicingApi {
         if (maybeProcess.isPresent()) {
             WorkflowProcess workflowProcess = maybeProcess.get();
             if (workflowProcess.state.equals(WorkflowState.CREATE_SHIPMENT)) {
-                StateMachineInstance stateMachine = workflowServiceApi.triggerEvent(
-                        workflowProcess.getWorkflow(),
-                        WorkflowEvent.SHIPMENT_CREATED,
-                        process);
-                saveState(workflowProcess, stateMachine.getCurrentState());
+                workflowServiceApi.triggerEvent(
+                                workflowProcess.getWorkflow(),
+                                WorkflowEvent.SHIPMENT_CREATED,
+                                process)
+                        .single()
+                        .subscribe(state -> saveState(workflowProcess.getWorkflow(), state));
             }
         }
     }
@@ -76,11 +85,12 @@ public class ItemServicingService implements ItemServicingApi {
         Optional<WorkflowProcess> maybeProcess = workflowRepositoryApi.findByBusinessKey(businessKey);
         if (maybeProcess.isPresent()) {
             WorkflowProcess workflowProcess = maybeProcess.get();
-            StateMachineInstance stateMachine = workflowServiceApi.triggerEvent(
-                    workflowProcess.getWorkflow(),
-                    WorkflowEvent.COURIER_ASSIGNED,
-                    process);
-            saveState(workflowProcess, stateMachine.getCurrentState());
+            workflowServiceApi.triggerEvent(
+                            workflowProcess.getWorkflow(),
+                            WorkflowEvent.COURIER_ASSIGNED,
+                            process)
+                    .single()
+                    .subscribe(state -> saveState(workflowProcess.getWorkflow(), state));
         }
     }
 
@@ -91,15 +101,16 @@ public class ItemServicingService implements ItemServicingApi {
             WorkflowProcess workflowProcess = maybeProcess.get();
             WorkflowEvent event = process.getIsDelivered() ?
                     WorkflowEvent.PACKAGE_DELIVERED : WorkflowEvent.PACKAGE_NOT_DELIVERED;
-            StateMachineInstance stateMachine = workflowServiceApi.triggerEvent(
-                    workflowProcess.getWorkflow(),
-                    event,
-                    process);
-            saveState(workflowProcess, stateMachine.getCurrentState());
+            workflowServiceApi.triggerEvent(
+                            workflowProcess.getWorkflow(),
+                            event,
+                            process)
+                    .single()
+                    .subscribe(state -> saveState(workflowProcess.getWorkflow(), state));
         }
     }
 
-    private void saveState(WorkflowProcess workflowProcess, WorkflowState state) {
-        workflowRepositoryApi.updateState(workflowProcess.getWorkflow(), state);
+    private void saveState(UUID workflowId, WorkflowState state) {
+        workflowRepositoryApi.updateState(workflowId, state);
     }
 }

@@ -1,5 +1,3 @@
-version: '3'
-
 services:
   postgres:
     container_name: orchestratordb
@@ -38,7 +36,6 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
     volumes:
       - orchestrator-kafka-data:/var/lib/kafka/data
-
   kafka-ui:
     image: provectuslabs/kafka-ui
     ports:
@@ -52,7 +49,6 @@ services:
       - tools
     volumes:
       - orchestrator-kafka-ui-data:/var/lib/kafka-ui/data
-
 volumes:
   orchestrator-postgres-data:
     driver: local

@@ -12,9 +12,11 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.EnableStateMachineFactory;
 import org.springframework.statemachine.config.EnumStateMachineConfigurerAdapter;
+import org.springframework.statemachine.config.builders.StateMachineConfigurationConfigurer;
 import org.springframework.statemachine.config.builders.StateMachineStateConfigurer;
 import org.springframework.statemachine.config.builders.StateMachineTransitionConfigurer;
 import org.springframework.statemachine.guard.Guard;
+import org.springframework.statemachine.persist.StateMachineRuntimePersister;
 
 import java.util.EnumSet;
 import java.util.UUID;
@@ -29,9 +31,17 @@ import static com.saga.orchestrator.domain.model.enums.WorkflowState.*;
 public class ItemServicingStateMachineConfig extends EnumStateMachineConfigurerAdapter<WorkflowState, WorkflowEvent> {
 
     private final ItemServicingActionApi itemServicingActionApi;
+    private final StateMachineRuntimePersister<WorkflowState, WorkflowEvent, String> stateMachineRuntimePersister;
     // 5 MINUTES
-    private long DELIVERY_TIMEOUT_PERIOD = 300000;
+    private final long DELIVERY_TIMEOUT_PERIOD = 300000;
 
+    @Override
+    public void configure(StateMachineConfigurationConfigurer<WorkflowState, WorkflowEvent> config)
+            throws Exception {
+        config
+                .withPersistence()
+                .runtimePersister(stateMachineRuntimePersister);
+    }
 
     @Override
     public void configure(StateMachineStateConfigurer<WorkflowState, WorkflowEvent> states) throws Exception {
@@ -84,7 +94,7 @@ public class ItemServicingStateMachineConfig extends EnumStateMachineConfigurerA
                 .withExternal()
                 .source(ASSIGN_COURIER_COMPLETED).target(DELIVERED).event(PACKAGE_DELIVERED)
 //                .action(updateShipment())
-                // when shipment, courier and claim are updated transition to is for refund state
+        // when shipment, courier and claim are updated transition to is for refund state
         ;
     }
 

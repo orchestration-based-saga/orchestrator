@@ -1,52 +1,37 @@
 package com.saga.orchestrator.infra.engine;
 
-import com.saga.orchestrator.domain.model.StateMachineInstance;
-import com.saga.orchestrator.domain.model.WorkflowInstance;
 import com.saga.orchestrator.domain.model.enums.WorkflowEvent;
 import com.saga.orchestrator.domain.model.enums.WorkflowState;
 import com.saga.orchestrator.domain.out.WorkflowServiceApi;
-import com.saga.orchestrator.infra.mapper.WorkflowMapper;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.statemachine.StateMachine;
-import org.springframework.statemachine.config.StateMachineFactory;
+import org.springframework.statemachine.service.StateMachineService;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
-import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 @RequiredArgsConstructor
 public class WorkflowService implements WorkflowServiceApi {
 
-    private final Map<UUID, WorkflowInstance> workflows = new ConcurrentHashMap<>();
-
-    @Qualifier("itemServicingStateMachineFactory")
-    private final StateMachineFactory<WorkflowState, WorkflowEvent> stateMachineFactory;
-    private final WorkflowMapper mapper;
+    private final StateMachineService<WorkflowState, WorkflowEvent> stateMachineService;
 
     @Override
-    public StateMachineInstance createWorkflow() {
-        StateMachine<WorkflowState, WorkflowEvent> stateMachine = stateMachineFactory.getStateMachine(UUID.randomUUID());
-        WorkflowInstance workflowInstance = new WorkflowInstance(stateMachine);
-        workflowInstance.getStateMachine().startReactively().subscribe();
-        workflows.put(workflowInstance.getId(), workflowInstance);
-        return mapper.toDomain(workflowInstance);
+    public Mono<StateMachine<WorkflowState, WorkflowEvent>> createWorkflow() {
+        var machineId = UUID.randomUUID();
+        return getMachine(machineId.toString());
     }
 
     @Override
-    public StateMachineInstance triggerEvent(UUID workflowId, WorkflowEvent event, Object data) {
-        WorkflowInstance workflowInstance = workflows.get(workflowId);
-        if (workflowInstance != null) {
-            StateMachine<WorkflowState, WorkflowEvent> stateMachine = workflowInstance.getStateMachine();
-            stateMachine.sendEvent(wrapEvent(event, workflowInstance.getId(), data)).subscribe();
-            return mapper.toDomain(workflowInstance);
-        }
-        return null;
+    public Flux<WorkflowState> triggerEvent(UUID workflowId, WorkflowEvent event, Object data) {
+        return getMachine(workflowId.toString())
+                .flatMapMany(sm -> sm.sendEvent(wrapEvent(event, workflowId, data)))
+                .map(res -> res.getRegion().getState().getId());
     }
 
     private Mono<Message<WorkflowEvent>> wrapEvent(WorkflowEvent event, UUID workflowId, Object data) {
@@ -55,5 +40,10 @@ public class WorkflowService implements WorkflowServiceApi {
                 .setHeader("workflowId", workflowId)
                 .setHeader("data", data)
                 .build());
+    }
+
+    private Mono<StateMachine<WorkflowState, WorkflowEvent>> getMachine(String id) {
+        return Mono.just(id).publishOn(Schedulers.boundedElastic())
+                .map(stateMachineService::acquireStateMachine);
     }
 }
