@@ -52,7 +52,7 @@ public class WorkflowConsumer {
     }
 
     @Bean
-    public Consumer<Message<ItemServicingProcessShipmentResponse>> assignCourier() {
+    public Consumer<Message<ItemServicingProcessShipmentResponse>> courierAssigned() {
         return msg ->
         {
             ItemServicingProcessShipmentResponse payload = msg.getPayload();

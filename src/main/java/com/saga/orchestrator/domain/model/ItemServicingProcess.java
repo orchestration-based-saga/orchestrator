@@ -1,16 +1,17 @@
 package com.saga.orchestrator.domain.model;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
-@RequiredArgsConstructor
+@AllArgsConstructor
 @Getter
 @Setter
 @SuperBuilder
 public class ItemServicingProcess extends WorkflowProcess {
-    private final Claim claim;
+    private Claim claim;
 
     public void updateWorkflowProcess(WorkflowProcess process) {
         this.setProcessId(process.getProcessId());

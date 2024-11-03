@@ -153,8 +153,8 @@ public class ItemServicingStateMachineConfig extends EnumStateMachineConfigurerA
                 log.error("Can't create claim");
                 // todo throw an error
             }
-            if (data instanceof ItemServicingProcess) {
-                itemServicingActionApi.createClaim((ItemServicingProcess) data, workflowId);
+            if (data instanceof ItemServicingProcess itemServicingProcess) {
+                itemServicingActionApi.createClaim(itemServicingProcess, workflowId);
             }
         };
     }
@@ -168,8 +168,8 @@ public class ItemServicingStateMachineConfig extends EnumStateMachineConfigurerA
                 log.error("Can't update claim");
                 // todo throw an error
             }
-            if (data instanceof ItemServicingProcess) {
-                itemServicingActionApi.updateClaim((ItemServicingProcess) data, workflowId);
+            if (data instanceof ItemServicingProcess itemServicingProcess) {
+                itemServicingActionApi.updateClaim(itemServicingProcess, workflowId);
             }
         };
     }
@@ -183,8 +183,8 @@ public class ItemServicingStateMachineConfig extends EnumStateMachineConfigurerA
                 log.error("Can't assign courier");
                 // todo throw an error
             }
-            if (data instanceof ItemServicingProcess) {
-                itemServicingActionApi.assignCourier((ItemServicingProcess) data, workflowId);
+            if (data instanceof ItemServicingProcess itemServicingProcess) {
+                itemServicingActionApi.assignCourier(itemServicingProcess, workflowId);
             }
         };
     }
@@ -199,8 +199,8 @@ public class ItemServicingStateMachineConfig extends EnumStateMachineConfigurerA
                 log.error("Can't reassign courier");
                 // todo throw an error
             }
-            if (data instanceof ItemServicingProcess) {
-                itemServicingActionApi.assignCourier((ItemServicingProcess) data, workflowId);
+            if (data instanceof ItemServicingProcess itemServicingProcess) {
+                itemServicingActionApi.assignCourier(itemServicingProcess, workflowId);
             }
         };
     }
@@ -230,8 +230,8 @@ public class ItemServicingStateMachineConfig extends EnumStateMachineConfigurerA
                 log.error("Can't create shipment");
                 // todo throw an error
             }
-            if (data instanceof ItemServicingProcess) {
-                return !((ItemServicingProcess) data).getClaim().shipmentInitiated();
+            if (data instanceof ItemServicingProcess itemServicingProcess) {
+                return !itemServicingProcess.getClaim().getShipmentInitiated();
             }
             return false;
         };
@@ -246,8 +246,8 @@ public class ItemServicingStateMachineConfig extends EnumStateMachineConfigurerA
                 log.error("Can't create shipment");
                 // todo throw an error
             }
-            if (data instanceof ItemServicingProcess) {
-                return ((ItemServicingProcess) data).getClaim().shipmentInitiated();
+            if (data instanceof ItemServicingProcess itemServicingProcess) {
+                return itemServicingProcess.getClaim().getShipmentInitiated();
             }
             return false;
         };

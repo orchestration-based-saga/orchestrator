@@ -1,19 +1,24 @@
 package com.saga.orchestrator.domain.model;
 
 import com.saga.orchestrator.domain.model.enums.ClaimState;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.UUID;
 
-public record Claim(
-        Integer id,
-        String orderId,
-        Integer itemId,
-        Integer merchantInventoryId,
-        Integer shipmentId,
-        UUID customerId,
-        UUID recipientId,
-        Boolean shipmentInitiated,
-        ClaimState status,
-        String packageId
-) {
+@AllArgsConstructor
+@Getter
+@Setter
+public final class Claim {
+    private Integer id;
+    private String orderId;
+    private Integer itemId;
+    private Integer merchantInventoryId;
+    private Integer shipmentId;
+    private UUID customerId;
+    private UUID recipientId;
+    private Boolean shipmentInitiated;
+    private ClaimState status;
+    private String packageId;
 }
