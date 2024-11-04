@@ -10,6 +10,5 @@ public enum WorkflowState {
     ASSIGN_COURIER,
     ASSIGN_COURIER_COMPLETED,
     WAIT_FOR_DELIVERY,
-    NOT_DELIVERED,
     DELIVERED
 }

@@ -1,6 +1,7 @@
 package com.saga.orchestrator.infra.engine;
 
 import com.saga.orchestrator.domain.in.ItemServicingActionApi;
+import com.saga.orchestrator.domain.model.CheckDeliveryProcess;
 import com.saga.orchestrator.domain.model.ItemServicingProcess;
 import com.saga.orchestrator.domain.model.ShipmentProcess;
 import com.saga.orchestrator.domain.model.enums.WorkflowEvent;
@@ -30,7 +31,8 @@ import static com.saga.orchestrator.domain.model.enums.WorkflowState.*;
 @EnableStateMachineFactory(name = "itemServicingStateMachineFactory")
 public class ItemServicingStateMachineConfig extends EnumStateMachineConfigurerAdapter<WorkflowState, WorkflowEvent> {
 
-    private final ItemServicingActionApi itemServicingActionApi;
+    private final ActionsConfig actions;
+    private final GuardsConfig guards;
     private final StateMachineRuntimePersister<WorkflowState, WorkflowEvent, String> stateMachineRuntimePersister;
     // 5 MINUTES
     private final long DELIVERY_TIMEOUT_PERIOD = 300000;
@@ -57,7 +59,7 @@ public class ItemServicingStateMachineConfig extends EnumStateMachineConfigurerA
         transitions
                 .withExternal()
                     .source(ITEM_SERVICING_INITIATED).target(USER_ACTION_RETURN_TO_WAREHOUSE).event(CREATE_CLAIM)
-                    .action(createClaim())
+                    .action(actions.createClaim())
                     .and()
                 .withExternal()
                     .source(USER_ACTION_RETURN_TO_WAREHOUSE).target(USER_ACTION_RETURN_TO_WAREHOUSE_COMPLETED)
@@ -66,17 +68,17 @@ public class ItemServicingStateMachineConfig extends EnumStateMachineConfigurerA
                 // user decided that item should/should not be returned to warehouse
                 .withJunction()
                     .source(USER_ACTION_RETURN_TO_WAREHOUSE_COMPLETED)
-                    .first(SERVICE_ON_SITE, doNotReturnToWarehouse())
-                    .then(CREATE_SHIPMENT, returnToWarehouse(), createShipment())
+                    .first(SERVICE_ON_SITE, guards.doNotReturnToWarehouse())
+                    .then(CREATE_SHIPMENT, guards.returnToWarehouse(), actions.createShipment())
                     .last(IS_FOR_REFUND)
                     .and()
                 .withExternal()
                     .source(CREATE_SHIPMENT).target(ASSIGN_COURIER).event(SHIPMENT_CREATED)
-                    .action(updateClaim()).action(assignCourierToShipment()).action(addRequestToContext())
+                    .action(actions.updateClaim()).action(actions.assignCourierToShipment()).action(actions.addRequestToContext())
                     .and()
                 .withExternal()
                     .source(ASSIGN_COURIER).target(ASSIGN_COURIER_COMPLETED).event(COURIER_ASSIGNED)
-                    .action(notifyWarehouseOfIncomingDelivery())
+                    .action(actions.notifyWarehouseOfIncomingDelivery())
                     .and()
                 .withExternal()
                     .source(ASSIGN_COURIER_COMPLETED).target(WAIT_FOR_DELIVERY).event(WAREHOUSE_NOTIFIED)
@@ -84,172 +86,24 @@ public class ItemServicingStateMachineConfig extends EnumStateMachineConfigurerA
                 .withInternal()
                     .source(WAIT_FOR_DELIVERY)
                     // if not reassign courier, else update status on courier and shipment
-                    .action(checkIfDelivered())
+                    .action(actions.checkIfDelivered())
                     .timer(DELIVERY_TIMEOUT_PERIOD)
-                .and()
-                    .withExternal()
-                    .source(WAIT_FOR_DELIVERY).target(NOT_DELIVERED).event(PACKAGE_NOT_DELIVERED)
-                    .action(reassignCourier())
-                .and()
-                    .withExternal()
-                    .source(WAIT_FOR_DELIVERY).target(DELIVERED).event(PACKAGE_DELIVERED)
+                    .and()
+                .withJunction()
+                    .source(WAIT_FOR_DELIVERY)
+                    .first(WAIT_FOR_DELIVERY, guards.isNotDelivered(), actions.reassignCourier())
+                    .then(DELIVERED, guards.isDelivered(), actions.updateShipment())
+                    .last(WAIT_FOR_DELIVERY)
+//                .and()
+//                    .withExternal()
+//                    .source()
+//                    .source(WAIT_FOR_DELIVERY).target(NOT_DELIVERED).event(PACKAGE_NOT_DELIVERED)
+//                    .action(reassignCourier())
+//                    .and()
+//                .withExternal()
+//                    .source(WAIT_FOR_DELIVERY).target(DELIVERED).event(PACKAGE_DELIVERED)
 //                .action(updateShipment())
         // when shipment, courier and claim are updated transition to is for refund state
         ;
-    }
-
-    // ACTIONS
-
-    @Bean
-    Action<WorkflowState, WorkflowEvent> notifyWarehouseOfIncomingDelivery() {
-        return context -> {
-            Object data = context.getMessageHeader("data");
-            UUID workflowId = (UUID) context.getMessageHeader("workflowId");
-            if (data == null) {
-                log.error("Can't notify warehouse of incoming package");
-                // todo throw an error
-            }
-            if (data instanceof ShipmentProcess process) {
-                context.getExtendedState().getVariables().put("packageId", process.getShipment().packageId());
-                context.getExtendedState().getVariables().put("businessKey", process.getBusinessKey());
-                itemServicingActionApi.notifyWarehouse(process, workflowId);
-            }
-        };
-    }
-
-    @Bean
-    Action<WorkflowState, WorkflowEvent> checkIfDelivered() {
-        return context -> {
-            String packageId = (String) context.getExtendedState().getVariables().get("packageId");
-            String businessKey = (String) context.getExtendedState().getVariables().get("businessKey");
-            UUID workflowId = (UUID) context.getMessageHeader("workflowId");
-            itemServicingActionApi.checkIfPackageIsDelivered(businessKey, packageId, workflowId);
-        };
-    }
-
-    @Bean
-    public Action<WorkflowState, WorkflowEvent> addRequestToContext() {
-        return context -> {
-            Object data = context.getMessageHeader("data");
-            if (data == null) {
-                log.error("Can't save assign courier request");
-                // todo throw an error
-            }
-            if (data instanceof ItemServicingProcess) {
-                context.getExtendedState().getVariables()
-                        .getOrDefault("assignCourierRequest", null);
-                context.getExtendedState().getVariables().put("assignCourierRequest", data);
-            }
-        };
-    }
-
-
-    @Bean
-    public Action<WorkflowState, WorkflowEvent> createClaim() {
-        return context -> {
-            Object data = context.getMessageHeader("data");
-            UUID workflowId = (UUID) context.getMessageHeader("workflowId");
-            if (data == null) {
-                log.error("Can't create claim");
-                // todo throw an error
-            }
-            if (data instanceof ItemServicingProcess itemServicingProcess) {
-                itemServicingActionApi.createClaim(itemServicingProcess, workflowId);
-            }
-        };
-    }
-
-    @Bean
-    public Action<WorkflowState, WorkflowEvent> updateClaim() {
-        return context -> {
-            Object data = context.getMessageHeader("data");
-            UUID workflowId = (UUID) context.getMessageHeader("workflowId");
-            if (data == null) {
-                log.error("Can't update claim");
-                // todo throw an error
-            }
-            if (data instanceof ItemServicingProcess itemServicingProcess) {
-                itemServicingActionApi.updateClaim(itemServicingProcess, workflowId);
-            }
-        };
-    }
-
-    @Bean
-    public Action<WorkflowState, WorkflowEvent> assignCourierToShipment() {
-        return context -> {
-            Object data = context.getMessageHeader("data");
-            UUID workflowId = (UUID) context.getMessageHeader("workflowId");
-            if (data == null) {
-                log.error("Can't assign courier");
-                // todo throw an error
-            }
-            if (data instanceof ItemServicingProcess itemServicingProcess) {
-                itemServicingActionApi.assignCourier(itemServicingProcess, workflowId);
-            }
-        };
-    }
-
-    @Bean
-    public Action<WorkflowState, WorkflowEvent> reassignCourier() {
-        return context -> {
-            Object data = context.getExtendedState().getVariables()
-                    .get("assignCourierRequest");
-            UUID workflowId = (UUID) context.getMessageHeader("workflowId");
-            if (data == null) {
-                log.error("Can't reassign courier");
-                // todo throw an error
-            }
-            if (data instanceof ItemServicingProcess itemServicingProcess) {
-                itemServicingActionApi.assignCourier(itemServicingProcess, workflowId);
-            }
-        };
-    }
-
-    @Bean
-    public Action<WorkflowState, WorkflowEvent> createShipment() {
-        return context -> {
-            Object data = context.getMessageHeader("data");
-            UUID workflowId = (UUID) context.getMessageHeader("workflowId");
-            if (data == null) {
-                log.error("Can't create shipment");
-                // todo throw an error
-            }
-            if (data instanceof ItemServicingProcess) {
-                itemServicingActionApi.createShipment((ItemServicingProcess) data, workflowId);
-            }
-        };
-    }
-
-    // GUARDS
-
-    @Bean
-    public Guard<WorkflowState, WorkflowEvent> doNotReturnToWarehouse() {
-        return context -> {
-            Object data = context.getMessageHeader("data");
-            if (data == null) {
-                log.error("Can't create shipment");
-                // todo throw an error
-            }
-            if (data instanceof ItemServicingProcess itemServicingProcess) {
-                return !itemServicingProcess.getClaim().getShipmentInitiated();
-            }
-            return false;
-        };
-    }
-
-
-    @Bean
-    public Guard<WorkflowState, WorkflowEvent> returnToWarehouse() {
-        return context -> {
-            Object data = context.getMessageHeader("data");
-            if (data == null) {
-                log.error("Can't create shipment");
-                // todo throw an error
-            }
-            if (data instanceof ItemServicingProcess itemServicingProcess) {
-                return itemServicingProcess.getClaim().getShipmentInitiated();
-            }
-            return false;
-        };
     }
 }
