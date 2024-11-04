@@ -1,7 +1,4 @@
 spring:
-  jpa:
-    hibernate:
-      ddl-auto: create
   application:
     name: orchestrator
   datasource:
@@ -10,7 +7,7 @@ spring:
     username: postgres
   cloud:
     function:
-      definition: startWorkflowProcess;claimCreated;shipmentCreated;packageDelivered;courierAssigned;
+      definition: startWorkflowProcess;claimCreated;shipmentCreated;packageDelivered;courierAssigned;warehouseNotified;
     config:
       enable: true
     stream:
@@ -55,10 +52,14 @@ spring:
           destination: workflow-courier-delivered-response
           content-type: application/json
           group: workflow-group
+        warehouseNotified-in-0:
+          destination: workflow-courier-notify-warehouse-response
+          content-type: application/json
         checkDelivery-in-0:
           destination: workflow-shipment-check-delivery-response
           content-type: application/json
           group: workflow-group
+
 logging:
   level:
     org.apache.kafka: ERROR

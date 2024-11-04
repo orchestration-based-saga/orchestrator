@@ -1,10 +1,7 @@
 package com.saga.orchestrator.application.mapper;
 
 import com.saga.orchestrator.application.api.*;
-import com.saga.orchestrator.domain.model.CheckDeliveryProcess;
-import com.saga.orchestrator.domain.model.Claim;
-import com.saga.orchestrator.domain.model.ItemServicingProcess;
-import com.saga.orchestrator.domain.model.ShipmentProcess;
+import com.saga.orchestrator.domain.model.*;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
@@ -26,6 +23,8 @@ public interface ProcessMapper {
 
     @Mapping(target = "state", ignore = true)
     ShipmentProcess fromResponse(ItemServicingProcessShipmentResponse response);
+
+    WarehouseNotified fromResponse(ItemServicingWarehouseNotifiedResponse response);
 
     @Named("toClaim")
     default Claim toClaim(Object data) {

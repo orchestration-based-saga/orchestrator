@@ -1,10 +1,7 @@
 package com.saga.orchestrator.domain.service;
 
 import com.saga.orchestrator.domain.in.ItemServicingApi;
-import com.saga.orchestrator.domain.model.CheckDeliveryProcess;
-import com.saga.orchestrator.domain.model.ItemServicingProcess;
-import com.saga.orchestrator.domain.model.ShipmentProcess;
-import com.saga.orchestrator.domain.model.WorkflowProcess;
+import com.saga.orchestrator.domain.model.*;
 import com.saga.orchestrator.domain.model.enums.WorkflowEvent;
 import com.saga.orchestrator.domain.model.enums.WorkflowState;
 import com.saga.orchestrator.domain.out.WorkflowRepositoryApi;
@@ -107,6 +104,22 @@ public class ItemServicingService implements ItemServicingApi {
                             process)
                     .single()
                     .subscribe(state -> saveState(workflowProcess.getWorkflow(), state));
+        }
+    }
+
+    @Override
+    public void warehouseNotified(String businessKey, WarehouseNotified process) {
+        Optional<WorkflowProcess> maybeProcess = workflowRepositoryApi.findByBusinessKey(businessKey);
+        if (maybeProcess.isPresent() && process.isSuccess()) {
+            WorkflowProcess workflowProcess = maybeProcess.get();
+            workflowServiceApi.triggerEvent(
+                            workflowProcess.getWorkflow(),
+                            WorkflowEvent.WAREHOUSE_NOTIFIED,
+                            process)
+                    .single()
+                    .subscribe(state -> saveState(workflowProcess.getWorkflow(), state));
+        } else if (!process.isSuccess()) {
+            log.error("Warehouse was not notified successfully. BusinessKey: {}", businessKey);
         }
     }
 

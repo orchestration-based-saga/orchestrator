@@ -61,6 +61,14 @@ public class WorkflowConsumer {
     }
 
     @Bean
+    public Consumer<Message<ItemServicingWarehouseNotifiedResponse>> warehouseNotified() {
+        return msg -> {
+            ItemServicingWarehouseNotifiedResponse payload = msg.getPayload();
+            itemServicingApi.warehouseNotified(payload.businessKey(), mapper.fromResponse(payload));
+        };
+    }
+
+    @Bean
     public Consumer<Message<CheckDeliveryResponse>> checkDelivery() {
         return msg -> {
             CheckDeliveryResponse payload = msg.getPayload();
