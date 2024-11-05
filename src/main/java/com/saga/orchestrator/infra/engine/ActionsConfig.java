@@ -30,7 +30,7 @@ public class ActionsConfig {
                 // todo throw an error
             }
             if (data instanceof ShipmentProcess process) {
-                context.getExtendedState().getVariables().put("packageId", process.getShipment().packageId());
+                context.getExtendedState().getVariables().put("packageId", process.getShipment().getPackageId());
                 context.getExtendedState().getVariables().put("businessKey", process.getBusinessKey());
                 itemServicingActionApi.notifyWarehouse(process, workflowId);
             }

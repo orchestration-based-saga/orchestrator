@@ -1,14 +1,12 @@
 package com.saga.orchestrator.domain.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 @AllArgsConstructor
 @Getter
 @Setter
+@NoArgsConstructor
 @SuperBuilder
 public class ItemServicingProcess extends WorkflowProcess {
     private Claim claim;

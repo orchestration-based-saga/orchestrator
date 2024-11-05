@@ -24,6 +24,10 @@ public interface ProcessMapper {
     @Mapping(target = "state", ignore = true)
     ShipmentProcess fromResponse(ItemServicingProcessShipmentResponse response);
 
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "parentProcessId", ignore = true)
+    @Mapping(target = "state", ignore = true)
+    @Mapping(target = "workflow", ignore = true)
     WarehouseNotified fromResponse(ItemServicingWarehouseNotifiedResponse response);
 
     @Named("toClaim")
