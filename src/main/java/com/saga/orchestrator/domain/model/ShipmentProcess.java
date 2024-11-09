@@ -1,13 +1,12 @@
 package com.saga.orchestrator.domain.model;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 
-@RequiredArgsConstructor
+@AllArgsConstructor
+@NoArgsConstructor
 @Getter
 @Setter
 @SuperBuilder
 public class ShipmentProcess extends WorkflowProcess{
-    private final Shipment shipment;
+    private Shipment shipment;
 }

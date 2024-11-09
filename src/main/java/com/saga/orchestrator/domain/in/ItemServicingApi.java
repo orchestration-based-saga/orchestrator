@@ -18,4 +18,6 @@ public interface ItemServicingApi {
     void isPackageDelivered(String businessKey, CheckDeliveryProcess process);
 
     void warehouseNotified(String businessKey, WarehouseNotified process);
+
+    void notifiedOfDelivery(String businessKey);
 }

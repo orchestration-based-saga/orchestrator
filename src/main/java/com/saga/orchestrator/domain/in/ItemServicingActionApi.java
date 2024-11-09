@@ -1,5 +1,6 @@
 package com.saga.orchestrator.domain.in;
 
+import com.saga.orchestrator.domain.model.CheckDeliveryProcess;
 import com.saga.orchestrator.domain.model.ItemServicingProcess;
 import com.saga.orchestrator.domain.model.ShipmentProcess;
 
@@ -18,4 +19,6 @@ public interface ItemServicingActionApi {
     void notifyWarehouse(ShipmentProcess process, UUID workflowId);
 
     void checkIfPackageIsDelivered(String businessKey, String packageId, UUID workflowId);
+
+    void notifyOfDeliveredPackage(CheckDeliveryProcess process, UUID workflowId);
 }

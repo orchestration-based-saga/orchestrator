@@ -123,6 +123,20 @@ public class ItemServicingService implements ItemServicingApi {
         }
     }
 
+    @Override
+    public void notifiedOfDelivery(String businessKey) {
+        Optional<WorkflowProcess> maybeProcess = workflowRepositoryApi.findByBusinessKey(businessKey);
+        if (maybeProcess.isPresent()) {
+            WorkflowProcess workflowProcess = maybeProcess.get();
+            workflowServiceApi.triggerEvent(
+                            workflowProcess.getWorkflow(),
+                            WorkflowEvent.CLAIM_UPDATED,
+                            null)
+                    .single()
+                    .subscribe(state -> saveState(workflowProcess.getWorkflow(), state));
+        }
+    }
+
     private void saveState(UUID workflowId, WorkflowState state) {
         workflowRepositoryApi.updateState(workflowId, state);
     }

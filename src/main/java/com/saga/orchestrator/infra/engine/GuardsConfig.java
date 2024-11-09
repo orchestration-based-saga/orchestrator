@@ -46,33 +46,33 @@ public class GuardsConfig {
         };
     }
 
-    @Bean
-    public Guard<WorkflowState, WorkflowEvent> isDelivered() {
-        return context -> {
-            Object data = context.getMessageHeader("data");
-            if (data == null) {
-                log.error("Can't create shipment");
-                // todo throw an error
-            }
-            if (data instanceof CheckDeliveryProcess checkDeliveryProcess) {
-                return checkDeliveryProcess.getIsDelivered().equals(true);
-            }
-            return false;
-        };
-    }
-
-    @Bean
-    public Guard<WorkflowState, WorkflowEvent> isNotDelivered() {
-        return context -> {
-            Object data = context.getMessageHeader("data");
-            if (data == null) {
-                log.error("Can't create shipment");
-                // todo throw an error
-            }
-            if (data instanceof CheckDeliveryProcess checkDeliveryProcess) {
-                return checkDeliveryProcess.getIsDelivered().equals(false);
-            }
-            return false;
-        };
-    }
+//    @Bean
+//    public Guard<WorkflowState, WorkflowEvent> isDelivered() {
+//        return context -> {
+//            Object data = context.getMessageHeader("data");
+//            if (data == null) {
+//                log.error("Can't create shipment");
+//                // todo throw an error
+//            }
+//            if (data instanceof CheckDeliveryProcess checkDeliveryProcess) {
+//                return checkDeliveryProcess.getIsDelivered().equals(true);
+//            }
+//            return false;
+//        };
+//    }
+//
+//    @Bean
+//    public Guard<WorkflowState, WorkflowEvent> isNotDelivered() {
+//        return context -> {
+//            Object data = context.getMessageHeader("data");
+//            if (data == null) {
+//                log.error("Can't create shipment");
+//                // todo throw an error
+//            }
+//            if (data instanceof CheckDeliveryProcess checkDeliveryProcess) {
+//                return checkDeliveryProcess.getIsDelivered().equals(false);
+//            }
+//            return false;
+//        };
+//    }
 }

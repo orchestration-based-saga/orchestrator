@@ -1,6 +1,7 @@
 package com.saga.orchestrator.infra.engine;
 
 import com.saga.orchestrator.domain.in.ItemServicingActionApi;
+import com.saga.orchestrator.domain.model.CheckDeliveryProcess;
 import com.saga.orchestrator.domain.model.ItemServicingProcess;
 import com.saga.orchestrator.domain.model.ShipmentProcess;
 import com.saga.orchestrator.domain.model.enums.WorkflowEvent;
@@ -44,6 +45,7 @@ public class ActionsConfig {
             String businessKey = (String) context.getExtendedState().getVariables().get("businessKey");
             UUID workflowId = (UUID) context.getMessageHeader("workflowId");
             itemServicingActionApi.checkIfPackageIsDelivered(businessKey, packageId, workflowId);
+            log.info("Checking status of delivery of package {}, businessKey {}", packageId, businessKey);
         };
     }
 
@@ -134,8 +136,8 @@ public class ActionsConfig {
                 log.error("Can't create shipment");
                 // todo throw an error
             }
-            if (data instanceof ItemServicingProcess) {
-                itemServicingActionApi.createShipment((ItemServicingProcess) data, workflowId);
+            if (data instanceof ItemServicingProcess process) {
+                itemServicingActionApi.createShipment(process, workflowId);
             }
         };
     }
@@ -149,8 +151,23 @@ public class ActionsConfig {
                 log.error("Can't create shipment");
                 // todo throw an error
             }
-            if (data instanceof ItemServicingProcess) {
-                itemServicingActionApi.createShipment((ItemServicingProcess) data, workflowId);
+            if (data instanceof ItemServicingProcess process) {
+                itemServicingActionApi.createShipment(process, workflowId);
+            }
+        };
+    }
+
+    @Bean
+    public Action<WorkflowState, WorkflowEvent> notifyOfDeliveredPackage() {
+        return context -> {
+            Object data = context.getMessageHeader("data");
+            UUID workflowId = (UUID) context.getMessageHeader("workflowId");
+            if (data == null) {
+                log.error("Can't notify about package delivery");
+                // todo throw an error
+            }
+            if (data instanceof CheckDeliveryProcess process) {
+                itemServicingActionApi.notifyOfDeliveredPackage(process, workflowId);
             }
         };
     }

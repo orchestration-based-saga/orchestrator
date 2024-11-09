@@ -1,11 +1,13 @@
 package com.saga.orchestrator.application.message.producer;
 
 
+import com.saga.orchestrator.application.DeliveredPackageNotificationMessage;
 import com.saga.orchestrator.application.api.CheckDeliveryProcessMessage;
 import com.saga.orchestrator.application.api.ItemServicingProcessMessage;
 import com.saga.orchestrator.application.api.ShipmentProcessMessage;
 import com.saga.orchestrator.application.mapper.ProcessMapper;
 import com.saga.orchestrator.domain.model.CheckDeliveryProcess;
+import com.saga.orchestrator.domain.model.DeliveredPackageNotification;
 import com.saga.orchestrator.domain.model.ItemServicingProcess;
 import com.saga.orchestrator.domain.model.ShipmentProcess;
 import com.saga.orchestrator.domain.out.WorkflowProducerApi;
@@ -35,6 +37,12 @@ public class WorkflowProducer implements WorkflowProducerApi {
     @Override
     public void sendServiceTaskRequest(String topic, CheckDeliveryProcess data) {
         CheckDeliveryProcessMessage message = mapper.toMessage(data);
+        streamBridge.send(topic, message);
+    }
+
+    @Override
+    public void sendServiceTaskRequest(String topic, DeliveredPackageNotification data) {
+        DeliveredPackageNotificationMessage message = mapper.toMessage(data);
         streamBridge.send(topic, message);
     }
 }

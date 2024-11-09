@@ -2,10 +2,7 @@ package com.saga.orchestrator.domain.service;
 
 import com.saga.orchestrator.application.api.WorkflowConstants;
 import com.saga.orchestrator.domain.in.ItemServicingActionApi;
-import com.saga.orchestrator.domain.model.CheckDeliveryProcess;
-import com.saga.orchestrator.domain.model.ItemServicingProcess;
-import com.saga.orchestrator.domain.model.ShipmentProcess;
-import com.saga.orchestrator.domain.model.TopicUtils;
+import com.saga.orchestrator.domain.model.*;
 import com.saga.orchestrator.domain.out.WorkflowProducerApi;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -51,5 +48,15 @@ public class ItemServicingActions implements ItemServicingActionApi {
                 .packageId(packageId)
                 .build();
         workflowProducerApi.sendServiceTaskRequest(TopicUtils.CHECK_DELIVERY, process);
+    }
+
+    @Override
+    public void notifyOfDeliveredPackage(CheckDeliveryProcess process, UUID workflowId) {
+        DeliveredPackageNotification msg = DeliveredPackageNotification.builder()
+                .businessKey(process.getBusinessKey())
+                .processId(WorkflowConstants.ITEM_SERVICING)
+                .packageId(process.getPackageId())
+                .build();
+        workflowProducerApi.sendServiceTaskRequest(TopicUtils.DELIVERED_PACKAGE, msg);
     }
 }

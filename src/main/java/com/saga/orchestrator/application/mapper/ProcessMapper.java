@@ -1,5 +1,6 @@
 package com.saga.orchestrator.application.mapper;
 
+import com.saga.orchestrator.application.DeliveredPackageNotificationMessage;
 import com.saga.orchestrator.application.api.*;
 import com.saga.orchestrator.domain.model.*;
 import org.mapstruct.Mapper;
@@ -58,6 +59,8 @@ public interface ProcessMapper {
     ShipmentProcessMessage toMessage(ShipmentProcess process);
 
     CheckDeliveryProcessMessage toMessage(CheckDeliveryProcess process);
+
+    DeliveredPackageNotificationMessage toMessage(DeliveredPackageNotification process);
 
     @Mapping(target = "packageId", source = "response.response.packageId")
     @Mapping(target = "isDelivered", source = "response.response.isDelivered")

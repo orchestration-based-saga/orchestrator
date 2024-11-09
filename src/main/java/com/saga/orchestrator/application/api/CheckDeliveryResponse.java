@@ -2,16 +2,18 @@ package com.saga.orchestrator.application.api;
 
 import lombok.*;
 
-@RequiredArgsConstructor
+@NoArgsConstructor
+@AllArgsConstructor
 @Getter
 @Setter
 @Builder
 public class CheckDeliveryResponse{
-    private final String businessKey;
-    private final String processId;
-    private final DeliveredPackageResponse response;
+    private String businessKey;
+    private String processId;
+    private DeliveredPackageResponse response;
 
 
+    @NoArgsConstructor
     @AllArgsConstructor
     @Getter
     @Setter

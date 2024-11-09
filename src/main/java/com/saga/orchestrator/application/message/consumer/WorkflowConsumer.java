@@ -76,6 +76,14 @@ public class WorkflowConsumer {
         };
     }
 
+    @Bean
+    public Consumer<Message<ItemServicingProcessMessage>> notifiedOfDelivery() {
+        return msg -> {
+            ItemServicingProcessMessage payload = msg.getPayload();
+            itemServicingApi.notifiedOfDelivery(payload.businessKey());
+        };
+    }
+
     private void processBusinessError(RuntimeException e) {
     }
 

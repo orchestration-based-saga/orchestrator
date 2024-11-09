@@ -1,26 +1,18 @@
 package com.saga.orchestrator.infra.engine;
 
-import com.saga.orchestrator.domain.in.ItemServicingActionApi;
-import com.saga.orchestrator.domain.model.CheckDeliveryProcess;
-import com.saga.orchestrator.domain.model.ItemServicingProcess;
-import com.saga.orchestrator.domain.model.ShipmentProcess;
 import com.saga.orchestrator.domain.model.enums.WorkflowEvent;
 import com.saga.orchestrator.domain.model.enums.WorkflowState;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.EnableStateMachineFactory;
 import org.springframework.statemachine.config.EnumStateMachineConfigurerAdapter;
 import org.springframework.statemachine.config.builders.StateMachineConfigurationConfigurer;
 import org.springframework.statemachine.config.builders.StateMachineStateConfigurer;
 import org.springframework.statemachine.config.builders.StateMachineTransitionConfigurer;
-import org.springframework.statemachine.guard.Guard;
 import org.springframework.statemachine.persist.StateMachineRuntimePersister;
 
 import java.util.EnumSet;
-import java.util.UUID;
 
 import static com.saga.orchestrator.domain.model.enums.WorkflowEvent.*;
 import static com.saga.orchestrator.domain.model.enums.WorkflowState.*;
@@ -89,21 +81,16 @@ public class ItemServicingStateMachineConfig extends EnumStateMachineConfigurerA
                     .action(actions.checkIfDelivered())
                     .timer(DELIVERY_TIMEOUT_PERIOD)
                     .and()
-                .withJunction()
-                    .source(WAIT_FOR_DELIVERY)
-                    .first(WAIT_FOR_DELIVERY, guards.isNotDelivered(), actions.reassignCourier())
-                    .then(DELIVERED, guards.isDelivered(), actions.updateShipment())
-                    .last(WAIT_FOR_DELIVERY)
-//                .and()
-//                    .withExternal()
-//                    .source()
-//                    .source(WAIT_FOR_DELIVERY).target(NOT_DELIVERED).event(PACKAGE_NOT_DELIVERED)
-//                    .action(reassignCourier())
-//                    .and()
-//                .withExternal()
-//                    .source(WAIT_FOR_DELIVERY).target(DELIVERED).event(PACKAGE_DELIVERED)
-//                .action(updateShipment())
-        // when shipment, courier and claim are updated transition to is for refund state
+                .withExternal()
+                    .source(WAIT_FOR_DELIVERY).target(WAIT_FOR_DELIVERY).event(PACKAGE_NOT_DELIVERED)
+                    .action(actions.reassignCourier())
+                    .and()
+                .withExternal()
+                    .source(WAIT_FOR_DELIVERY).target(DELIVERED).event(PACKAGE_DELIVERED)
+                    .action(actions.notifyOfDeliveredPackage())
+                .and()
+                .withExternal()
+                    .source(DELIVERED).target(IS_FOR_REFUND).event(CLAIM_UPDATED)
         ;
     }
 }
