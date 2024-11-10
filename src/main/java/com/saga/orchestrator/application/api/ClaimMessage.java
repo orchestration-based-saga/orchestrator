@@ -12,6 +12,7 @@ public record ClaimMessage(
         UUID customerId,
         UUID recipientId,
         ClaimStatus status,
-        Integer shipmentId
+        Integer shipmentId,
+        String packageId
 ) {
 }

@@ -28,7 +28,7 @@ public class ItemServicingService implements ItemServicingApi {
                     .map(workflow -> WorkflowProcess.builder()
                             .processId(process.getProcessId())
                             .businessKey(process.getBusinessKey())
-                            .workflow(workflow.getUuid())
+                            .workflow(UUID.fromString(workflow.getId()))
                             .state(workflow.getState().getId())
                             .build())
                     .subscribe(workflowProcess -> {
