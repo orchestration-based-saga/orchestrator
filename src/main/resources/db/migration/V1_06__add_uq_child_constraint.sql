@@ -1,0 +1,1 @@
+alter table process add constraint uq_child unique(business_key, parent_process_id);

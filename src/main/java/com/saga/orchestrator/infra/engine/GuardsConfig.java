@@ -1,6 +1,7 @@
 package com.saga.orchestrator.infra.engine;
 
 import com.saga.orchestrator.domain.model.CheckDeliveryProcess;
+import com.saga.orchestrator.domain.model.ItemRefundProcess;
 import com.saga.orchestrator.domain.model.ItemServicingProcess;
 import com.saga.orchestrator.domain.model.enums.WorkflowEvent;
 import com.saga.orchestrator.domain.model.enums.WorkflowState;
@@ -46,33 +47,33 @@ public class GuardsConfig {
         };
     }
 
-//    @Bean
-//    public Guard<WorkflowState, WorkflowEvent> isDelivered() {
-//        return context -> {
-//            Object data = context.getMessageHeader("data");
-//            if (data == null) {
-//                log.error("Can't create shipment");
-//                // todo throw an error
-//            }
-//            if (data instanceof CheckDeliveryProcess checkDeliveryProcess) {
-//                return checkDeliveryProcess.getIsDelivered().equals(true);
-//            }
-//            return false;
-//        };
-//    }
-//
-//    @Bean
-//    public Guard<WorkflowState, WorkflowEvent> isNotDelivered() {
-//        return context -> {
-//            Object data = context.getMessageHeader("data");
-//            if (data == null) {
-//                log.error("Can't create shipment");
-//                // todo throw an error
-//            }
-//            if (data instanceof CheckDeliveryProcess checkDeliveryProcess) {
-//                return checkDeliveryProcess.getIsDelivered().equals(false);
-//            }
-//            return false;
-//        };
-//    }
+    @Bean
+    public Guard<WorkflowState, WorkflowEvent> isForRefund() {
+        return context -> {
+            Object data = context.getMessageHeader("data");
+            if (data == null) {
+                log.error("Can't start refund");
+                // todo throw an error
+            }
+            if (data instanceof ItemRefundProcess process) {
+                return process.isForRefund();
+            }
+            return false;
+        };
+    }
+
+    @Bean
+    public Guard<WorkflowState, WorkflowEvent> isNotForRefund() {
+        return context -> {
+            Object data = context.getMessageHeader("data");
+            if (data == null) {
+                log.error("Can't exit state machine");
+                // todo throw an error
+            }
+            if (data instanceof ItemRefundProcess process) {
+                return !process.isForRefund();
+            }
+            return false;
+        };
+    }
 }

@@ -23,7 +23,7 @@ public class ItemServicingService implements ItemServicingApi {
     @Transactional
     @Override
     public void itemServicing(ItemServicingProcess process) {
-        if (workflowRepositoryApi.findByBusinessKey(process.getBusinessKey()).isEmpty()) {
+        if (workflowRepositoryApi.findByBusinessKeyAndProcess(process.getBusinessKey(), process.getProcessId()).isEmpty()) {
             workflowServiceApi.createWorkflow()
                     .map(workflow -> WorkflowProcess.builder()
                             .processId(process.getProcessId())
@@ -47,7 +47,8 @@ public class ItemServicingService implements ItemServicingApi {
 
     @Override
     public void claimCreated(String businessKey, ItemServicingProcess process) {
-        Optional<WorkflowProcess> maybeProcess = workflowRepositoryApi.findByBusinessKey(businessKey);
+        Optional<WorkflowProcess> maybeProcess = workflowRepositoryApi
+                .findByBusinessKeyAndProcess(businessKey, process.getProcessId());
         if (maybeProcess.isPresent()) {
             WorkflowProcess workflowProcess = maybeProcess.get();
             if (workflowProcess.state.equals(WorkflowState.USER_ACTION_RETURN_TO_WAREHOUSE)) {
@@ -63,7 +64,8 @@ public class ItemServicingService implements ItemServicingApi {
 
     @Override
     public void shipmentCreated(String businessKey, ItemServicingProcess process) {
-        Optional<WorkflowProcess> maybeProcess = workflowRepositoryApi.findByBusinessKey(businessKey);
+        Optional<WorkflowProcess> maybeProcess = workflowRepositoryApi
+                .findByBusinessKeyAndProcess(businessKey, process.getProcessId());
         if (maybeProcess.isPresent()) {
             WorkflowProcess workflowProcess = maybeProcess.get();
             if (workflowProcess.state.equals(WorkflowState.CREATE_SHIPMENT)) {
@@ -79,7 +81,8 @@ public class ItemServicingService implements ItemServicingApi {
 
     @Override
     public void courierAssigned(String businessKey, ShipmentProcess process) {
-        Optional<WorkflowProcess> maybeProcess = workflowRepositoryApi.findByBusinessKey(businessKey);
+        Optional<WorkflowProcess> maybeProcess = workflowRepositoryApi
+                .findByBusinessKeyAndProcess(businessKey, process.getProcessId());
         if (maybeProcess.isPresent()) {
             WorkflowProcess workflowProcess = maybeProcess.get();
             workflowServiceApi.triggerEvent(
@@ -93,7 +96,8 @@ public class ItemServicingService implements ItemServicingApi {
 
     @Override
     public void isPackageDelivered(String businessKey, CheckDeliveryProcess process) {
-        Optional<WorkflowProcess> maybeProcess = workflowRepositoryApi.findByBusinessKey(businessKey);
+        Optional<WorkflowProcess> maybeProcess = workflowRepositoryApi
+                .findByBusinessKeyAndProcess(businessKey, process.getProcessId());
         if (maybeProcess.isPresent()) {
             WorkflowProcess workflowProcess = maybeProcess.get();
             WorkflowEvent event = process.getIsDelivered() ?
@@ -109,7 +113,8 @@ public class ItemServicingService implements ItemServicingApi {
 
     @Override
     public void warehouseNotified(String businessKey, WarehouseNotified process) {
-        Optional<WorkflowProcess> maybeProcess = workflowRepositoryApi.findByBusinessKey(businessKey);
+        Optional<WorkflowProcess> maybeProcess = workflowRepositoryApi
+                .findByBusinessKeyAndProcess(businessKey, process.getProcessId());
         if (maybeProcess.isPresent() && process.isSuccess()) {
             WorkflowProcess workflowProcess = maybeProcess.get();
             workflowServiceApi.triggerEvent(
@@ -124,8 +129,9 @@ public class ItemServicingService implements ItemServicingApi {
     }
 
     @Override
-    public void notifiedOfDelivery(String businessKey) {
-        Optional<WorkflowProcess> maybeProcess = workflowRepositoryApi.findByBusinessKey(businessKey);
+    public void notifiedOfDelivery(String businessKey, String processId) {
+        Optional<WorkflowProcess> maybeProcess = workflowRepositoryApi
+                .findByBusinessKeyAndProcess(businessKey, processId);
         if (maybeProcess.isPresent()) {
             WorkflowProcess workflowProcess = maybeProcess.get();
             workflowServiceApi.triggerEvent(
@@ -134,6 +140,24 @@ public class ItemServicingService implements ItemServicingApi {
                             null)
                     .single()
                     .subscribe(state -> saveState(workflowProcess.getWorkflow(), state));
+        }
+    }
+
+    @Override
+    public void startRefund(ItemRefundProcess process) {
+        Optional<WorkflowProcess> maybeProcess = workflowRepositoryApi
+                .findParentByBusinessKey(process.getBusinessKey());
+        if (maybeProcess.isPresent()) {
+            WorkflowProcess workflowProcess = maybeProcess.get();
+            workflowServiceApi.triggerEvent(
+                            workflowProcess.getWorkflow(),
+                            WorkflowEvent.IS_FOR_REFUND_COMPLETED,
+                            process)
+                    .single()
+                    .subscribe(state ->
+                            workflowRepositoryApi.createChildProcess(
+                                    workflowProcess, process.getBusinessKey(), state, process.getProcessId())
+                    );
         }
     }
 

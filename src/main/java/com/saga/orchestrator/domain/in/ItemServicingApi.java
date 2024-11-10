@@ -1,9 +1,6 @@
 package com.saga.orchestrator.domain.in;
 
-import com.saga.orchestrator.domain.model.CheckDeliveryProcess;
-import com.saga.orchestrator.domain.model.ItemServicingProcess;
-import com.saga.orchestrator.domain.model.ShipmentProcess;
-import com.saga.orchestrator.domain.model.WarehouseNotified;
+import com.saga.orchestrator.domain.model.*;
 
 public interface ItemServicingApi {
 
@@ -19,5 +16,7 @@ public interface ItemServicingApi {
 
     void warehouseNotified(String businessKey, WarehouseNotified process);
 
-    void notifiedOfDelivery(String businessKey);
+    void notifiedOfDelivery(String businessKey, String processId);
+
+    void startRefund(ItemRefundProcess process);
 }

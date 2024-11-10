@@ -1,6 +1,6 @@
 package com.saga.orchestrator.application.mapper;
 
-import com.saga.orchestrator.application.DeliveredPackageNotificationMessage;
+import com.saga.orchestrator.application.api.DeliveredPackageNotificationMessage;
 import com.saga.orchestrator.application.api.*;
 import com.saga.orchestrator.domain.model.*;
 import org.mapstruct.Mapper;
@@ -21,6 +21,13 @@ public interface ProcessMapper {
 
     @Mapping(target = "state", ignore = true)
     ItemServicingProcess fromResponse(ItemServicingProcessResponse response);
+
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "parentProcessId", ignore = true)
+    @Mapping(target = "state", ignore = true)
+    @Mapping(target = "workflow", ignore = true)
+    @Mapping(target = "claim", source = "response.claim", qualifiedByName = "toClaim")
+    ItemRefundProcess fromResponse(ItemRefundProcessRequest response);
 
     @Mapping(target = "state", ignore = true)
     ShipmentProcess fromResponse(ItemServicingProcessShipmentResponse response);
@@ -54,6 +61,10 @@ public interface ProcessMapper {
     }
 
     ItemServicingProcessMessage toMessage(ItemServicingProcess process);
+
+    @Mapping(target = "amount", source = "refundAmount")
+    @Mapping(target = "itemId", source = "process.claim.merchantInventoryId")
+    ItemRefundProcessMessage toMessage(ItemRefundProcess process);
 
     @Mapping(target = "shipmentId", source = "process.shipment.shipmentId")
     ShipmentProcessMessage toMessage(ShipmentProcess process);

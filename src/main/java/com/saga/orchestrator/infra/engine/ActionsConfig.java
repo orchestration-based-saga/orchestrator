@@ -2,6 +2,7 @@ package com.saga.orchestrator.infra.engine;
 
 import com.saga.orchestrator.domain.in.ItemServicingActionApi;
 import com.saga.orchestrator.domain.model.CheckDeliveryProcess;
+import com.saga.orchestrator.domain.model.ItemRefundProcess;
 import com.saga.orchestrator.domain.model.ItemServicingProcess;
 import com.saga.orchestrator.domain.model.ShipmentProcess;
 import com.saga.orchestrator.domain.model.enums.WorkflowEvent;
@@ -171,4 +172,20 @@ public class ActionsConfig {
             }
         };
     }
+
+    @Bean
+    public Action<WorkflowState, WorkflowEvent> initiateRefund() {
+        return context -> {
+            Object data = context.getMessageHeader("data");
+            UUID workflowId = (UUID) context.getMessageHeader("workflowId");
+            if (data == null) {
+                log.error("Can't initiate refund");
+                // todo throw an error
+            }
+            if (data instanceof ItemRefundProcess process) {
+                itemServicingActionApi.initiateRefund(process, workflowId);
+            }
+        };
+    }
+
 }

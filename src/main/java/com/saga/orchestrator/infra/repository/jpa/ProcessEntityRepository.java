@@ -12,7 +12,7 @@ import java.util.UUID;
 
 public interface ProcessEntityRepository extends JpaRepository<ProcessEntity, Long> {
 
-    Optional<ProcessEntity> findByBusinessKey(String businessKey);
+    Optional<ProcessEntity> findByBusinessKeyAndProcessId(String businessKey, String processId);
 
     @Modifying
     @Query(value = """
@@ -21,4 +21,11 @@ public interface ProcessEntityRepository extends JpaRepository<ProcessEntity, Lo
                     WHERE workflowId = :workflowId
             """)
     void updateState(@Param("workflowId") UUID workflowId, @Param("state") WorkflowState state);
+
+    @Query(value = """
+                SELECT p
+                FROM Process p
+                WHERE p.businessKey = :businessKey and p.parentProcessId is null
+            """)
+    Optional<ProcessEntity> findParentByBusinessKey(@Param("businessKey") String businessKey);
 }

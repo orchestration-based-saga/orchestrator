@@ -80,7 +80,15 @@ public class WorkflowConsumer {
     public Consumer<Message<ItemServicingProcessMessage>> notifiedOfDelivery() {
         return msg -> {
             ItemServicingProcessMessage payload = msg.getPayload();
-            itemServicingApi.notifiedOfDelivery(payload.businessKey());
+            itemServicingApi.notifiedOfDelivery(payload.businessKey(), payload.processId());
+        };
+    }
+
+    @Bean
+    public Consumer<Message<ItemRefundProcessRequest>> startRefund() {
+        return msg -> {
+            ItemRefundProcessRequest payload = msg.getPayload();
+            itemServicingApi.startRefund(mapper.fromResponse(payload));
         };
     }
 

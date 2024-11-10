@@ -1,4 +1,4 @@
-package com.saga.orchestrator.application;
+package com.saga.orchestrator.application.api;
 
 import java.util.UUID;
 

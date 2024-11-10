@@ -42,7 +42,9 @@ public class ItemServicingStateMachineConfig extends EnumStateMachineConfigurerA
         states.withStates()
                 .initial(ITEM_SERVICING_INITIATED)
                 .states(EnumSet.allOf(WorkflowState.class))
-                .junction(USER_ACTION_RETURN_TO_WAREHOUSE_COMPLETED);
+                .junction(USER_ACTION_RETURN_TO_WAREHOUSE_COMPLETED)
+                .choice(USER_ACTION_IS_FOR_REFUND_RESULT)
+                .end(ITEM_SERVICING_COMPLETED);
 
     }
 
@@ -62,7 +64,7 @@ public class ItemServicingStateMachineConfig extends EnumStateMachineConfigurerA
                     .source(USER_ACTION_RETURN_TO_WAREHOUSE_COMPLETED)
                     .first(SERVICE_ON_SITE, guards.doNotReturnToWarehouse())
                     .then(CREATE_SHIPMENT, guards.returnToWarehouse(), actions.createShipment())
-                    .last(IS_FOR_REFUND)
+                    .last(USER_ACTION_IS_FOR_REFUND)
                     .and()
                 .withExternal()
                     .source(CREATE_SHIPMENT).target(ASSIGN_COURIER).event(SHIPMENT_CREATED)
@@ -77,7 +79,6 @@ public class ItemServicingStateMachineConfig extends EnumStateMachineConfigurerA
                     .and()
                 .withInternal()
                     .source(WAIT_FOR_DELIVERY)
-                    // if not reassign courier, else update status on courier and shipment
                     .action(actions.checkIfDelivered())
                     .timer(DELIVERY_TIMEOUT_PERIOD)
                     .and()
@@ -88,9 +89,17 @@ public class ItemServicingStateMachineConfig extends EnumStateMachineConfigurerA
                 .withExternal()
                     .source(WAIT_FOR_DELIVERY).target(DELIVERED).event(PACKAGE_DELIVERED)
                     .action(actions.notifyOfDeliveredPackage())
-                .and()
+                    .and()
                 .withExternal()
-                    .source(DELIVERED).target(IS_FOR_REFUND).event(CLAIM_UPDATED)
-        ;
+                    .source(DELIVERED).target(USER_ACTION_IS_FOR_REFUND).event(CLAIM_UPDATED)
+                    .and()
+                .withExternal()
+                    .source(USER_ACTION_IS_FOR_REFUND).target(USER_ACTION_IS_FOR_REFUND_RESULT).event(IS_FOR_REFUND_COMPLETED)
+                    .and()
+                .withChoice()
+                    .source(USER_ACTION_IS_FOR_REFUND_RESULT)
+                    .first(REFUND_INITIATED, guards.isForRefund(), actions.initiateRefund())
+                    .then(ITEM_SERVICING_COMPLETED, guards.isNotForRefund())
+                    .last(ITEM_SERVICING_COMPLETED);
     }
 }

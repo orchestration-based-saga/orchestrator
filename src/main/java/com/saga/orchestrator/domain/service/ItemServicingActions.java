@@ -59,4 +59,9 @@ public class ItemServicingActions implements ItemServicingActionApi {
                 .build();
         workflowProducerApi.sendServiceTaskRequest(TopicUtils.DELIVERED_PACKAGE, msg);
     }
+
+    @Override
+    public void initiateRefund(ItemRefundProcess process, UUID workflowId) {
+        workflowProducerApi.sendServiceTaskRequest(TopicUtils.START_REFUND, process);
+    }
 }
