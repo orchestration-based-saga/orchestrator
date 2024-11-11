@@ -13,5 +13,6 @@ public class TopicUtils {
     public final String CHECK_DELIVERY = "workflow-shipment-check-delivery-request";
     public final String DELIVERED_PACKAGE = "workflow-delivered-package-request";
     public final String START_REFUND = "workflow-start-refund-response";
+    public final String CHECK_REFUND = "workflow-check-refund-request";
 }
 

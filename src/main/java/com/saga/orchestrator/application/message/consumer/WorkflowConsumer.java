@@ -92,6 +92,14 @@ public class WorkflowConsumer {
         };
     }
 
+    @Bean
+    public Consumer<Message<CompletedRefundProcessResponse>> checkRefund() {
+        return msg -> {
+            CompletedRefundProcessResponse payload = msg.getPayload();
+            itemServicingApi.refundCompleted(mapper.fromResponse(payload));
+        };
+    }
+
     private void processBusinessError(RuntimeException e) {
     }
 

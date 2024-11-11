@@ -1,6 +1,7 @@
 package com.saga.orchestrator.infra.engine;
 
 import com.saga.orchestrator.domain.model.CheckDeliveryProcess;
+import com.saga.orchestrator.domain.model.CompletedRefundProcess;
 import com.saga.orchestrator.domain.model.ItemRefundProcess;
 import com.saga.orchestrator.domain.model.ItemServicingProcess;
 import com.saga.orchestrator.domain.model.enums.WorkflowEvent;
@@ -72,6 +73,36 @@ public class GuardsConfig {
             }
             if (data instanceof ItemRefundProcess process) {
                 return !process.isForRefund();
+            }
+            return false;
+        };
+    }
+
+    @Bean
+    public Guard<WorkflowState, WorkflowEvent> isRefundCompleted() {
+        return context -> {
+            Object data = context.getMessageHeader("data");
+            if (data == null) {
+                log.error("Can't exit state machine");
+                // todo throw an error
+            }
+            if (data instanceof CompletedRefundProcess process) {
+                return process.isCompleted();
+            }
+            return false;
+        };
+    }
+
+    @Bean
+    public Guard<WorkflowState, WorkflowEvent> isRefundNotCompleted() {
+        return context -> {
+            Object data = context.getMessageHeader("data");
+            if (data == null) {
+                log.error("Can't exit state machine");
+                // todo throw an error
+            }
+            if (data instanceof CompletedRefundProcess process) {
+                return !process.isCompleted();
             }
             return false;
         };

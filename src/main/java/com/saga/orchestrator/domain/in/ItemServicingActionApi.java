@@ -1,9 +1,6 @@
 package com.saga.orchestrator.domain.in;
 
-import com.saga.orchestrator.domain.model.CheckDeliveryProcess;
-import com.saga.orchestrator.domain.model.ItemRefundProcess;
-import com.saga.orchestrator.domain.model.ItemServicingProcess;
-import com.saga.orchestrator.domain.model.ShipmentProcess;
+import com.saga.orchestrator.domain.model.*;
 
 import java.util.UUID;
 
@@ -24,4 +21,6 @@ public interface ItemServicingActionApi {
     void notifyOfDeliveredPackage(CheckDeliveryProcess process, UUID workflowId);
 
     void initiateRefund(ItemRefundProcess process, UUID workflowId);
+
+    void checkIfRefundCompleted(String businessKey, String orderId, UUID workflowId);
 }

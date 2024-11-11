@@ -19,4 +19,6 @@ public interface ItemServicingApi {
     void notifiedOfDelivery(String businessKey, String processId);
 
     void startRefund(ItemRefundProcess process);
+
+    void refundCompleted(CompletedRefundProcess process);
 }

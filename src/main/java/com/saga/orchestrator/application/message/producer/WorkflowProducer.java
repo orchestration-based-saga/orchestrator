@@ -45,4 +45,10 @@ public class WorkflowProducer implements WorkflowProducerApi {
         ItemRefundProcessMessage message = mapper.toMessage(data);
         streamBridge.send(topic, message);
     }
+
+    @Override
+    public void sendServiceTaskRequest(String topic, CheckRefundProcess data) {
+        CheckRefundProcessMessage message = mapper.toMessage(data);
+        streamBridge.send(topic, message);
+    }
 }

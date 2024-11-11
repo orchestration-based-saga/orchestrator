@@ -161,6 +161,21 @@ public class ItemServicingService implements ItemServicingApi {
         }
     }
 
+    @Override
+    public void refundCompleted(CompletedRefundProcess process) {
+        Optional<WorkflowProcess> maybeProcess = workflowRepositoryApi
+                .findByBusinessKeyAndProcess(process.getBusinessKey(), process.getProcessId());
+        if (maybeProcess.isPresent()) {
+            WorkflowProcess workflowProcess = maybeProcess.get();
+            workflowServiceApi.triggerEvent(
+                            workflowProcess.getWorkflow(),
+                            WorkflowEvent.REFUND_COMPLETED,
+                            process)
+                    .single()
+                    .subscribe(state -> saveState(workflowProcess.getWorkflow(), state));
+        }
+    }
+
     private void saveState(UUID workflowId, WorkflowState state) {
         workflowRepositoryApi.updateState(workflowId, state);
     }

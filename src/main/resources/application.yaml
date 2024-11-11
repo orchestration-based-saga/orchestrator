@@ -7,7 +7,7 @@ spring:
     username: postgres
   cloud:
     function:
-      definition: startWorkflowProcess;claimCreated;shipmentCreated;packageDelivered;courierAssigned;warehouseNotified;notifiedOfDelivery;checkDelivery;startRefund;
+      definition: startWorkflowProcess;claimCreated;shipmentCreated;packageDelivered;courierAssigned;warehouseNotified;notifiedOfDelivery;checkDelivery;startRefund;checkRefund;
     config:
       enable: true
     stream:
@@ -65,6 +65,10 @@ spring:
           group: workflow-group
         startRefund-in-0:
           destination: workflow-start-refund-request
+          content-type: application/json
+          group: workflow-group
+        checkRefund-in-0:
+          destination: workflow-check-refund-response
           content-type: application/json
           group: workflow-group
 logging:

@@ -1,6 +1,5 @@
 package com.saga.orchestrator.application.mapper;
 
-import com.saga.orchestrator.application.api.DeliveredPackageNotificationMessage;
 import com.saga.orchestrator.application.api.*;
 import com.saga.orchestrator.domain.model.*;
 import org.mapstruct.Mapper;
@@ -26,8 +25,8 @@ public interface ProcessMapper {
     @Mapping(target = "parentProcessId", ignore = true)
     @Mapping(target = "state", ignore = true)
     @Mapping(target = "workflow", ignore = true)
-    @Mapping(target = "claim", source = "response.claim", qualifiedByName = "toClaim")
-    ItemRefundProcess fromResponse(ItemRefundProcessRequest response);
+    @Mapping(target = "claim", source = "request.claim", qualifiedByName = "toClaim")
+    ItemRefundProcess fromResponse(ItemRefundProcessRequest request);
 
     @Mapping(target = "state", ignore = true)
     ShipmentProcess fromResponse(ItemServicingProcessShipmentResponse response);
@@ -37,6 +36,12 @@ public interface ProcessMapper {
     @Mapping(target = "state", ignore = true)
     @Mapping(target = "workflow", ignore = true)
     WarehouseNotified fromResponse(ItemServicingWarehouseNotifiedResponse response);
+
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "parentProcessId", ignore = true)
+    @Mapping(target = "state", ignore = true)
+    @Mapping(target = "workflow", ignore = true)
+    CompletedRefundProcess fromResponse(CompletedRefundProcessResponse request);
 
     @Named("toClaim")
     default Claim toClaim(Object data) {
@@ -70,6 +75,8 @@ public interface ProcessMapper {
     ShipmentProcessMessage toMessage(ShipmentProcess process);
 
     CheckDeliveryProcessMessage toMessage(CheckDeliveryProcess process);
+
+    CheckRefundProcessMessage toMessage(CheckRefundProcess process);
 
     DeliveredPackageNotificationMessage toMessage(DeliveredPackageNotification process);
 

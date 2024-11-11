@@ -1,10 +1,7 @@
 package com.saga.orchestrator.infra.engine;
 
 import com.saga.orchestrator.domain.in.ItemServicingActionApi;
-import com.saga.orchestrator.domain.model.CheckDeliveryProcess;
-import com.saga.orchestrator.domain.model.ItemRefundProcess;
-import com.saga.orchestrator.domain.model.ItemServicingProcess;
-import com.saga.orchestrator.domain.model.ShipmentProcess;
+import com.saga.orchestrator.domain.model.*;
 import com.saga.orchestrator.domain.model.enums.WorkflowEvent;
 import com.saga.orchestrator.domain.model.enums.WorkflowState;
 import lombok.RequiredArgsConstructor;
@@ -183,9 +180,21 @@ public class ActionsConfig {
                 // todo throw an error
             }
             if (data instanceof ItemRefundProcess process) {
+                context.getExtendedState().getVariables().put("orderId", process.getClaim().getOrderId());
                 itemServicingActionApi.initiateRefund(process, workflowId);
             }
         };
     }
 
+    @Bean
+    public Action<WorkflowState, WorkflowEvent> checkIfRefunded() {
+        return context -> {
+            String orderId = (String) context.getExtendedState().getVariables().get("orderId");
+            String businessKey = (String) context.getExtendedState().getVariables().get("businessKey");
+            UUID workflowId = (UUID) context.getMessageHeader("workflowId");
+            itemServicingActionApi.checkIfRefundCompleted(businessKey, orderId, workflowId);
+            log.info("Checking status of refund of order {}, businessKey {}", orderId, businessKey);
+
+        };
+    }
 }

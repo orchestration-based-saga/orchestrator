@@ -28,6 +28,7 @@ public class ItemServicingStateMachineConfig extends EnumStateMachineConfigurerA
     private final StateMachineRuntimePersister<WorkflowState, WorkflowEvent, String> stateMachineRuntimePersister;
     // 5 MINUTES
     private final long DELIVERY_TIMEOUT_PERIOD = 300000;
+    private final long REFUND_TIMEOUT_PERIOD = 300000;
 
     @Override
     public void configure(StateMachineConfigurationConfigurer<WorkflowState, WorkflowEvent> config)
@@ -100,6 +101,21 @@ public class ItemServicingStateMachineConfig extends EnumStateMachineConfigurerA
                     .source(USER_ACTION_IS_FOR_REFUND_RESULT)
                     .first(REFUND_INITIATED, guards.isForRefund(), actions.initiateRefund())
                     .then(ITEM_SERVICING_COMPLETED, guards.isNotForRefund())
-                    .last(ITEM_SERVICING_COMPLETED);
+                    .last(ITEM_SERVICING_COMPLETED)
+                    .and()
+                .withInternal()
+                    .source(REFUND_INITIATED)
+                    .action(actions.checkIfRefunded())
+                    .timer(REFUND_TIMEOUT_PERIOD)
+                    .and()
+                .withExternal()
+                    .source(REFUND_INITIATED)
+                    .guard(guards.isRefundCompleted())
+                    .target(ITEM_SERVICING_COMPLETED)
+                    .event(REFUND_COMPLETED)
+                    .and()
+                .withExternal()
+                    .source(REFUND_INITIATED).target(REFUND_INITIATED).event(REFUND_COMPLETED)
+                    .guard(guards.isRefundNotCompleted());
     }
 }

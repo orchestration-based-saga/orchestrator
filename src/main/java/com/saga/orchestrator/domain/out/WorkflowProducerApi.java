@@ -13,4 +13,6 @@ public interface WorkflowProducerApi {
     void sendServiceTaskRequest(String topic, DeliveredPackageNotification data);
 
     void sendServiceTaskRequest(String topic, ItemRefundProcess data);
+
+    void sendServiceTaskRequest(String topic, CheckRefundProcess data);
 }
