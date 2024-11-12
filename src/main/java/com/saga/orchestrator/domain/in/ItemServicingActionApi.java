@@ -20,7 +20,5 @@ public interface ItemServicingActionApi {
 
     void notifyOfDeliveredPackage(CheckDeliveryProcess process, UUID workflowId);
 
-    void initiateRefund(ItemRefundProcess process, UUID workflowId);
-
-    void checkIfRefundCompleted(String businessKey, String orderId, UUID workflowId);
+    void checkIfRefundCompleted(String processId, String orderId, UUID workflowId, String businessKey);
 }

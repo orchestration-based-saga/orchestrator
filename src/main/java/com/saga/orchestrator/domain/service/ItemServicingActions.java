@@ -61,12 +61,7 @@ public class ItemServicingActions implements ItemServicingActionApi {
     }
 
     @Override
-    public void initiateRefund(ItemRefundProcess process, UUID workflowId) {
-        workflowProducerApi.sendServiceTaskRequest(TopicUtils.START_REFUND, process);
-    }
-
-    @Override
-    public void checkIfRefundCompleted(String businessKey, String orderId, UUID workflowId) {
+    public void checkIfRefundCompleted(String processId, String orderId, UUID workflowId, String businessKey) {
         var process = CheckRefundProcess.builder()
                 .businessKey(businessKey)
                 .workflow(workflowId)

@@ -25,7 +25,6 @@ public interface ProcessMapper {
     @Mapping(target = "parentProcessId", ignore = true)
     @Mapping(target = "state", ignore = true)
     @Mapping(target = "workflow", ignore = true)
-    @Mapping(target = "claim", source = "request.claim", qualifiedByName = "toClaim")
     ItemRefundProcess fromResponse(ItemRefundProcessRequest request);
 
     @Mapping(target = "state", ignore = true)

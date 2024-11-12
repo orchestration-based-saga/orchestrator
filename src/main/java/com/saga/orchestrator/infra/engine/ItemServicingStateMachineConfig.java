@@ -26,9 +26,9 @@ public class ItemServicingStateMachineConfig extends EnumStateMachineConfigurerA
     private final ActionsConfig actions;
     private final GuardsConfig guards;
     private final StateMachineRuntimePersister<WorkflowState, WorkflowEvent, String> stateMachineRuntimePersister;
-    // 5 MINUTES
-    private final long DELIVERY_TIMEOUT_PERIOD = 300000;
-    private final long REFUND_TIMEOUT_PERIOD = 300000;
+    // 3 MINUTES
+    private final long DELIVERY_TIMEOUT_PERIOD = 180000;
+    private final long REFUND_TIMEOUT_PERIOD = 120000;
 
     @Override
     public void configure(StateMachineConfigurationConfigurer<WorkflowState, WorkflowEvent> config)

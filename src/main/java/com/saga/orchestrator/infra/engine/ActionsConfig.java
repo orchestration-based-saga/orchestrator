@@ -181,7 +181,8 @@ public class ActionsConfig {
             }
             if (data instanceof ItemRefundProcess process) {
                 context.getExtendedState().getVariables().put("orderId", process.getClaim().getOrderId());
-                itemServicingActionApi.initiateRefund(process, workflowId);
+                context.getExtendedState().getVariables().put("workflowId", workflowId);
+                context.getExtendedState().getVariables().put("processId", process.getProcessId());
             }
         };
     }
@@ -191,8 +192,9 @@ public class ActionsConfig {
         return context -> {
             String orderId = (String) context.getExtendedState().getVariables().get("orderId");
             String businessKey = (String) context.getExtendedState().getVariables().get("businessKey");
-            UUID workflowId = (UUID) context.getMessageHeader("workflowId");
-            itemServicingActionApi.checkIfRefundCompleted(businessKey, orderId, workflowId);
+            UUID workflowId = (UUID) context.getExtendedState().getVariables().get("workflowId");
+            String processId = (String) context.getExtendedState().getVariables().get("processId");
+            itemServicingActionApi.checkIfRefundCompleted(processId, orderId, workflowId, businessKey);
             log.info("Checking status of refund of order {}, businessKey {}", orderId, businessKey);
 
         };
