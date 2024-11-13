@@ -63,6 +63,7 @@ public class ItemServicingActions implements ItemServicingActionApi {
     @Override
     public void checkIfRefundCompleted(String processId, String orderId, UUID workflowId, String businessKey) {
         var process = CheckRefundProcess.builder()
+                .processId(processId)
                 .businessKey(businessKey)
                 .workflow(workflowId)
                 .orderId(orderId)
